@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent Verification & Call Notes - Legal Intake</title>
+  <meta name="description" content="Intake agent portal to verify claimant authenticity, log telephone screening, and record post-call messages.">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body {
+      background-color: #F8FAFC;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+  </style>
+</head>
+<body class="min-h-screen text-slate-900 flex flex-col">
+
+  <!-- Shared Global Suite Navigation -->
+  <div id="global-nav-bar"></div>
+
+  <!-- Agent Workspace -->
+  <main class="flex-1 px-4 py-6 sm:px-6 sm:py-8 max-w-7xl mx-auto w-full">
+    
+    <!-- Page Header & Lead Selector -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-200">
+      <div>
+        <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 mb-2">
+          <i data-lucide="shield-alert" class="w-3.5 h-3.5"></i> Agent Verification & Authenticity Screening
+        </div>
+        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">Claimant Call & Verification Portal</h1>
+        <p class="text-sm text-slate-500">Conduct claimant phone interview, audit accident credibility, and mark case authenticity for attorney review.</p>
+      </div>
+
+      <!-- Lead Picker -->
+      <div class="flex items-center gap-3 bg-white p-2.5 rounded-xl border border-slate-200 shadow-xs">
+        <label for="lead-selector" class="text-xs font-semibold uppercase tracking-wider text-slate-500 shrink-0">Select Lead:</label>
+        <select id="lead-selector" onchange="loadSelectedLead(this.value)" class="h-9 rounded-lg border border-slate-300 bg-slate-50 px-3 text-sm font-medium text-slate-800 outline-none focus:border-indigo-600">
+          <!-- Populated by JS -->
+        </select>
+        <button onclick="refreshLeadList()" title="Refresh" class="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition">
+          <i data-lucide="rotate-cw" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Active Lead Status Banner -->
+    <div id="lead-status-bar" class="mb-6 p-4 rounded-xl border flex flex-wrap items-center justify-between gap-4 bg-white border-slate-200 shadow-xs">
+      <!-- Injected via JS -->
+    </div>
+
+    <!-- Two Column Grid: Left is Lead Details (Submitted Data), Right is Agent Verification & Calling Form -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      
+      <!-- LEFT COLUMN: Lead Dossier (Submitted by Claimant) -->
+      <div class="lg:col-span-5 space-y-5">
+        
+        <!-- Claimant Summary Card -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xs">
+          <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
+            <h2 class="font-bold text-slate-900 flex items-center gap-2 text-base">
+              <i data-lucide="user" class="w-4 h-4 text-indigo-600"></i> Claimant Profile
+            </h2>
+            <span id="dossier-lead-id" class="text-xs font-mono font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-700">LEAD-0000</span>
+          </div>
+
+          <div class="space-y-3.5 text-sm">
+            <div>
+              <div class="text-xs text-slate-500 font-medium">Full Name</div>
+              <div id="dossier-name" class="font-semibold text-slate-900 text-base">Loading...</div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 pt-2">
+              <div>
+                <div class="text-xs text-slate-500 font-medium">Phone Number</div>
+                <div class="flex items-center gap-1.5 mt-0.5">
+                  <span id="dossier-phone" class="font-semibold text-indigo-600">Loading...</span>
+                </div>
+              </div>
+              <div>
+                <div class="text-xs text-slate-500 font-medium">Best Time to Call</div>
+                <div id="dossier-best-time" class="text-slate-800">Loading...</div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 pt-2">
+              <div>
+                <div class="text-xs text-slate-500 font-medium">Email Address</div>
+                <div id="dossier-email" class="text-slate-800 break-words">Loading...</div>
+              </div>
+              <div>
+                <div class="text-xs text-slate-500 font-medium">Occupation</div>
+                <div id="dossier-occupation" class="text-slate-800">Loading...</div>
+              </div>
+            </div>
+
+            <div class="pt-2 border-t border-slate-100">
+              <div class="text-xs text-slate-500 font-medium">Mailing Address</div>
+              <div id="dossier-address" class="text-slate-800 mt-0.5">Loading...</div>
+            </div>
+
+            <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
+              <span class="text-xs text-slate-500">Has existing attorney?</span>
+              <span id="dossier-has-attorney" class="text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-800">No</span>
+            </div>
+          </div>
+
+          <!-- Call Simulator Bar -->
+          <div class="mt-5 pt-4 border-t border-slate-100 bg-slate-50 -mx-5 -mb-5 p-4 rounded-b-2xl flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <button type="button" id="start-call-btn" onclick="toggleCallTimer()" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 transition shadow-xs">
+                <i data-lucide="phone-call" class="w-3.5 h-3.5"></i> <span id="call-btn-text">Dial / Start Call</span>
+              </button>
+              <div id="call-timer-display" class="font-mono text-xs font-bold text-slate-700 hidden">
+                <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-ping mr-1"></span>
+                <span id="call-timer-digits">00:00</span>
+              </div>
+            </div>
+            <span class="text-[11px] text-slate-400">Tracks phone interview duration</span>
+          </div>
+        </div>
+
+        <!-- Incident & Injury Details Card -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xs space-y-4">
+          <h2 class="font-bold text-slate-900 flex items-center gap-2 text-base border-b border-slate-100 pb-3">
+            <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-500"></i> Accident & Injuries Summary
+          </h2>
+
+          <div class="space-y-3 text-sm">
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <span class="text-xs text-slate-500 font-medium">Accident Date</span>
+                <div id="dossier-date" class="font-medium text-slate-900 mt-0.5">Loading...</div>
+              </div>
+              <div>
+                <span class="text-xs text-slate-500 font-medium">Accident Time</span>
+                <div id="dossier-time" class="font-medium text-slate-900 mt-0.5">Loading...</div>
+              </div>
+            </div>
+
+            <div>
+              <span class="text-xs text-slate-500 font-medium">Claimant Accident Narrative</span>
+              <p id="dossier-description" class="mt-1 p-3 bg-slate-50 rounded-xl text-slate-700 text-xs leading-relaxed border border-slate-200">
+                Loading narrative...
+              </p>
+            </div>
+
+            <div>
+              <span class="text-xs text-slate-500 font-medium">Documented Injured Persons</span>
+              <div id="dossier-injured-list" class="mt-1.5 space-y-2">
+                <!-- Injected via JS -->
+              </div>
+            </div>
+
+            <div class="pt-2 border-t border-slate-100">
+              <span class="text-xs text-slate-500 font-medium">Insurance & Additional Info</span>
+              <p id="dossier-additional" class="text-xs text-slate-600 mt-1 italic">
+                Loading...
+              </p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT COLUMN: Agent Review Form & Authenticity Marking -->
+      <div class="lg:col-span-7">
+        <form id="agent-review-form" onsubmit="handleSaveAgentReview(event)" class="bg-white rounded-2xl border border-slate-200 p-6 sm:p-7 shadow-xs space-y-6">
+          
+          <div class="border-b border-slate-100 pb-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <i data-lucide="clipboard-check" class="w-5 h-5 text-indigo-600"></i> Agent Call Screening & Authenticity Audit
+                </h2>
+                <p class="text-xs text-slate-500 mt-0.5">Complete telephone screening to verify identity, confirm injuries, and certify case authenticity.</p>
+              </div>
+              <span class="text-xs bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-1 rounded-md font-semibold">Step 2 / 3</span>
+            </div>
+          </div>
+
+          <!-- Section A: Call Status & Telephony Details -->
+          <div class="space-y-3">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500">1. Call Telephony & Contact Outcome</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label class="block text-xs font-medium text-slate-700 mb-1">Call Outcome <span class="text-rose-500">*</span></label>
+                <select id="agent-call-status" required class="h-9 w-full rounded-lg border border-slate-300 bg-white px-2.5 text-xs font-medium text-slate-800 outline-none focus:border-indigo-600">
+                  <option value="Connected & Verified" selected>Connected & Verified</option>
+                  <option value="Voicemail Left">Voicemail Left</option>
+                  <option value="No Answer / Busy">No Answer / Busy</option>
+                  <option value="Call Scheduled">Call Scheduled for Later</option>
+                  <option value="Wrong Number">Wrong Number / Invalid</option>
+                  <option value="Refused to Speak">Refused / Not Interested</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-medium text-slate-700 mb-1">Call Duration</label>
+                <input type="text" id="agent-call-duration" placeholder="e.g. 10 mins" value="8 mins" class="h-9 w-full rounded-lg border border-slate-300 bg-white px-3 text-xs outline-none focus:border-indigo-600" />
+              </div>
+
+              <div>
+                <label class="block text-xs font-medium text-slate-700 mb-1">Reviewing Agent Name <span class="text-rose-500">*</span></label>
+                <input type="text" id="agent-name" required value="Agent Marcus Vance" class="h-9 w-full rounded-lg border border-slate-300 bg-white px-3 text-xs outline-none focus:border-indigo-600" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Section B: Authenticity Verification Checklist -->
+          <div class="space-y-3 pt-4 border-t border-slate-100">
+            <div class="flex items-center justify-between">
+              <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500">2. Verification & Fraud Prevention Checklist</h3>
+              <button type="button" onclick="checkAllVerification()" class="text-[11px] text-indigo-600 hover:text-indigo-800 font-medium">Select All Verified</button>
+            </div>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 bg-slate-50/70 p-3.5 rounded-xl border border-slate-200">
+              <label class="flex items-start gap-2.5 text-xs text-slate-700 cursor-pointer p-1">
+                <input type="checkbox" id="check-id" checked class="mt-0.5 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                <div>
+                  <span class="font-semibold block">Identity & Contact Match</span>
+                  <span class="text-slate-500 text-[11px]">Claimant confirmed name, phone, and residential address.</span>
+                </div>
+              </label>
+
+              <label class="flex items-start gap-2.5 text-xs text-slate-700 cursor-pointer p-1">
+                <input type="checkbox" id="check-sol" checked class="mt-0.5 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                <div>
+                  <span class="font-semibold block">Within Statute of Limitations</span>
+                  <span class="text-slate-500 text-[11px]">Accident date falls strictly within the 2-year state limit.</span>
+                </div>
+              </label>
+
+              <label class="flex items-start gap-2.5 text-xs text-slate-700 cursor-pointer p-1">
+                <input type="checkbox" id="check-no-attorney" checked class="mt-0.5 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                <div>
+                  <span class="font-semibold block">No Existing Attorney Representation</span>
+                  <span class="text-slate-500 text-[11px]">Confirmed no prior retainers or active law firm representation.</span>
+                </div>
+              </label>
+
+              <label class="flex items-start gap-2.5 text-xs text-slate-700 cursor-pointer p-1">
+                <input type="checkbox" id="check-treatment" checked class="mt-0.5 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                <div>
+                  <span class="font-semibold block">Medical Treatment Documented</span>
+                  <span class="text-slate-500 text-[11px]">ER, Urgent Care, or Physician evaluation completed / scheduled.</span>
+                </div>
+              </label>
+
+              <label class="flex items-start gap-2.5 text-xs text-slate-700 cursor-pointer p-1 sm:col-span-2">
+                <input type="checkbox" id="check-liability" checked class="mt-0.5 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                <div>
+                  <span class="font-semibold block">Clear Defendant Fault / Viable Liability</span>
+                  <span class="text-slate-500 text-[11px]">Police report issued or clear third-party negligence demonstrated.</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Section C: Authenticity Verdict & Viability Rating -->
+          <div class="space-y-3 pt-4 border-t border-slate-100">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500">3. Lead Authenticity Verdict & Priority</h3>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-medium text-slate-700 mb-1.5">Authenticity Status <span class="text-rose-500">*</span></label>
+                <div class="space-y-2">
+                  <label class="flex items-center gap-2.5 p-2.5 rounded-xl border border-emerald-300 bg-emerald-50/60 cursor-pointer transition hover:bg-emerald-50">
+                    <input type="radio" name="verdictStatus" value="verified" checked class="text-emerald-600 focus:ring-emerald-500">
+                    <div class="text-xs">
+                      <span class="font-bold text-emerald-900 block">Mark as Genuine & Authentic</span>
+                      <span class="text-emerald-700 text-[11px]">Verified claimant, legitimate injury, ready for attorney review.</span>
+                    </div>
+                  </label>
+
+                  <label class="flex items-center gap-2.5 p-2.5 rounded-xl border border-blue-200 bg-blue-50/40 cursor-pointer transition hover:bg-blue-50">
+                    <input type="radio" name="verdictStatus" value="followup" class="text-blue-600 focus:ring-blue-500">
+                    <div class="text-xs">
+                      <span class="font-bold text-blue-900 block">Needs Follow-Up / Records</span>
+                      <span class="text-blue-700 text-[11px]">Unreachable or missing accident verification documents.</span>
+                    </div>
+                  </label>
+
+                  <label class="flex items-center gap-2.5 p-2.5 rounded-xl border border-rose-200 bg-rose-50/40 cursor-pointer transition hover:bg-rose-50">
+                    <input type="radio" name="verdictStatus" value="rejected" class="text-rose-600 focus:ring-rose-500">
+                    <div class="text-xs">
+                      <span class="font-bold text-rose-900 block">Flag as Fraud / Duplicate / Rejected</span>
+                      <span class="text-rose-700 text-[11px]">Unauthentic submission, false details, or duplicate spam.</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-medium text-slate-700 mb-1.5">Case Viability & Value Rating</label>
+                <select id="agent-viability" class="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-xs font-medium text-slate-800 outline-none focus:border-indigo-600">
+                  <option value="5/5 - High Viability (Clear Liability & Substantial Injury)" selected>5/5 - High Viability (Clear Liability & Substantial Injury)</option>
+                  <option value="4/5 - Strong Viability (Favorable liability, moderate medicals)">4/5 - Strong Viability (Favorable liability, moderate medicals)</option>
+                  <option value="3/5 - Moderate / Pending Records (Needs Police Report)">3/5 - Moderate / Pending Records (Needs Police Report)</option>
+                  <option value="2/5 - Low Merit / Contested Liability">2/5 - Low Merit / Contested Liability</option>
+                  <option value="1/5 - Non-viable / High Risk">1/5 - Non-viable / High Risk</option>
+                </select>
+
+                <div class="mt-4 p-3 rounded-xl bg-slate-50 border border-slate-200">
+                  <div class="text-[11px] font-semibold text-slate-600 mb-1">Law Firm Priority Level:</div>
+                  <div class="flex gap-2">
+                    <label class="flex-1 text-center py-1.5 rounded-lg border border-slate-300 text-xs font-semibold cursor-pointer has-[:checked]:bg-rose-600 has-[:checked]:text-white has-[:checked]:border-rose-600 bg-white text-slate-700">
+                      <input type="radio" name="priorityLevel" value="high" checked class="hidden"> High Priority
+                    </label>
+                    <label class="flex-1 text-center py-1.5 rounded-lg border border-slate-300 text-xs font-semibold cursor-pointer has-[:checked]:bg-amber-500 has-[:checked]:text-white has-[:checked]:border-amber-500 bg-white text-slate-700">
+                      <input type="radio" name="priorityLevel" value="medium" class="hidden"> Normal
+                    </label>
+                    <label class="flex-1 text-center py-1.5 rounded-lg border border-slate-300 text-xs font-semibold cursor-pointer has-[:checked]:bg-slate-500 has-[:checked]:text-white has-[:checked]:border-slate-500 bg-white text-slate-700">
+                      <input type="radio" name="priorityLevel" value="low" class="hidden"> Low
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section D: Post-Call Agent Message ("add the message after calling") -->
+          <div class="space-y-3 pt-4 border-t border-slate-100">
+            <div class="flex items-center justify-between">
+              <label for="agent-message" class="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                4. Agent Post-Call Message & Attorney Hand-off Notes <span class="text-rose-500">*</span>
+              </label>
+              <span class="text-[11px] text-slate-400">Detailed notes after speaking with claimant</span>
+            </div>
+
+            <!-- Quick Template Snippets -->
+            <div class="flex flex-wrap gap-1.5">
+              <button type="button" onclick="insertSnippet('Spoke with claimant directly. Very credible and clear timeline. Severe injuries confirmed with hospital treatment. Ready for immediate retainer.')" class="text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-1 rounded transition">+ Highly Credible</button>
+              <button type="button" onclick="insertSnippet('Attempted phone call, reached voicemail. Left reference number and scheduled second contact attempt.')" class="text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-1 rounded transition">+ Voicemail Left</button>
+              <button type="button" onclick="insertSnippet('Defendant vehicle was commercial truck / commercial policy identified. Substantial property damage.')" class="text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-1 rounded transition">+ Commercial Policy</button>
+              <button type="button" onclick="insertSnippet('Police report confirmed other party cited for running red light. No contributory negligence.')" class="text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-1 rounded transition">+ Police Cited Fault</button>
+            </div>
+
+            <textarea id="agent-message" required rows="5" placeholder="Enter full summary of the phone interview with the claimant. Note their demeanor, confirmed medical treatments, pain symptoms, insurance carrier details, and specific instructions for the retaining attorney..." class="w-full rounded-xl border border-slate-300 bg-white p-3.5 text-xs sm:text-sm text-slate-800 outline-none transition focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"></textarea>
+          </div>
+
+          <!-- Form Submit / Verification Submission Bar -->
+          <div class="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <a href="law-dashboard.html" class="text-xs text-slate-500 hover:text-slate-800 flex items-center gap-1">
+              <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> Return to Law Firm Dashboard
+            </a>
+
+            <button type="submit" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs sm:text-sm shadow-sm transition">
+              <i data-lucide="badge-check" class="w-4 h-4"></i> Save & Certify Agent Verification
+            </button>
+          </div>
+
+        </form>
+      </div>
+
+    </div>
+
+  </main>
+
+  <script src="shared.js"></script>
+  <script>
+    let currentLead = null;
+    let callTimerInterval = null;
+    let callSeconds = 0;
+    let isCalling = false;
+
+    // Load available leads into the selector
+    function refreshLeadList() {
+      const leads = LegalStore.getLeads();
+      const selector = document.getElementById('lead-selector');
+      selector.innerHTML = '';
+
+      if (leads.length === 0) {
+        selector.innerHTML = '<option value="">No leads in system</option>';
+        return;
+      }
+
+      leads.forEach(l => {
+        const opt = document.createElement('option');
+        opt.value = l.id;
+        const statusText = l.status === 'verified' ? '✓ Verified' : (l.status === 'pending' ? '⏳ Pending' : '• ' + l.status);
+        opt.textContent = `${l.id} - ${l.contactInfo.firstName} ${l.contactInfo.lastName} (${statusText})`;
+        selector.appendChild(opt);
+      });
+
+      // Check URL search param for pre-selected leadId
+      const params = new URLSearchParams(window.location.search);
+      const urlLeadId = params.get('leadId');
+      if (urlLeadId && leads.some(l => l.id === urlLeadId)) {
+        selector.value = urlLeadId;
+      }
+
+      loadSelectedLead(selector.value);
+    }
+
+    function loadSelectedLead(leadId) {
+      if (!leadId) return;
+      currentLead = LegalStore.getLeadById(leadId);
+      if (!currentLead) return;
+
+      // Update URL query string without page reload
+      const newUrl = new URL(window.location);
+      newUrl.searchParams.set('leadId', leadId);
+      window.history.replaceState({}, '', newUrl);
+
+      // Render Left Dossier
+      document.getElementById('dossier-lead-id').textContent = currentLead.id;
+      document.getElementById('dossier-name').textContent = `${currentLead.contactInfo.firstName} ${currentLead.contactInfo.lastName}`;
+      document.getElementById('dossier-phone').textContent = currentLead.contactInfo.phone;
+      document.getElementById('dossier-email').textContent = currentLead.contactInfo.email || 'N/A';
+      document.getElementById('dossier-occupation').textContent = currentLead.basicInfo.occupation || 'N/A';
+      document.getElementById('dossier-best-time').textContent = currentLead.contactInfo.bestTimeToCall || 'Anytime';
+      document.getElementById('dossier-address').textContent = `${currentLead.contactInfo.address}, ${currentLead.contactInfo.mailingCity}, ${currentLead.contactInfo.mailingState} ${currentLead.contactInfo.mailingZip}`;
+      document.getElementById('dossier-has-attorney').textContent = currentLead.basicInfo.hasAttorney || 'No';
+
+      document.getElementById('dossier-date').textContent = LegalStore.formatDate(currentLead.accidentDetails.accidentDate);
+      document.getElementById('dossier-time').textContent = currentLead.accidentDetails.accidentTime || 'N/A';
+      document.getElementById('dossier-description').textContent = currentLead.accidentDetails.description || 'No description provided.';
+      document.getElementById('dossier-additional').textContent = currentLead.additionalInfo?.notes || 'None';
+
+      // Render Injured list
+      const injuredContainer = document.getElementById('dossier-injured-list');
+      if (currentLead.injuredPeople && currentLead.injuredPeople.length > 0) {
+        injuredContainer.innerHTML = currentLead.injuredPeople.map((p, idx) => `
+          <div class="p-2.5 rounded-lg bg-rose-50/60 border border-rose-200 text-xs">
+            <span class="font-bold text-rose-900">${p.firstName} ${p.lastName} (Person ${idx + 1}):</span>
+            <span class="text-rose-800 ml-1">${p.injuryDescription}</span>
+          </div>
+        `).join('');
+      } else {
+        injuredContainer.innerHTML = '<div class="text-xs text-slate-400 italic">No specific injured persons listed.</div>';
+      }
+
+      // Render Status Banner
+      const statusBar = document.getElementById('lead-status-bar');
+      statusBar.innerHTML = `
+        <div class="flex items-center gap-3">
+          ${LegalStore.getStatusBadge(currentLead.status)}
+          <span class="text-xs text-slate-500">Submitted: <strong>${LegalStore.formatDateTime(currentLead.createdAt)}</strong></span>
+          <span class="text-xs text-slate-400">|</span>
+          <span class="text-xs text-slate-500">Type: <strong>${currentLead.basicInfo.caseType}</strong></span>
+        </div>
+        <div class="text-xs">
+          ${currentLead.agentReview ? `
+            <span class="text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md font-medium border border-emerald-200">
+              Verified by ${currentLead.agentReview.agentName} on ${LegalStore.formatDate(currentLead.agentReview.reviewedAt)}
+            </span>
+          ` : `
+            <span class="text-amber-700 bg-amber-50 px-2.5 py-1 rounded-md font-medium border border-amber-200">
+              Awaiting Telephone Verification
+            </span>
+          `}
+        </div>
+      `;
+
+      // Pre-fill Agent Review Form if already reviewed
+      if (currentLead.agentReview) {
+        document.getElementById('agent-call-status').value = currentLead.agentReview.callStatus || 'Connected & Verified';
+        document.getElementById('agent-call-duration').value = currentLead.agentReview.callDuration || '10 mins';
+        document.getElementById('agent-name').value = currentLead.agentReview.agentName || 'Marcus Vance';
+        document.getElementById('agent-message').value = currentLead.agentReview.agentMessage || '';
+        document.getElementById('agent-viability').value = currentLead.agentReview.estimatedViability || '5/5 - High Viability (Clear Liability & Substantial Injury)';
+
+        if (currentLead.agentReview.checklist) {
+          document.getElementById('check-id').checked = !!currentLead.agentReview.checklist.idVerified;
+          document.getElementById('check-sol').checked = !!currentLead.agentReview.checklist.solValid;
+          document.getElementById('check-no-attorney').checked = !!currentLead.agentReview.checklist.noPriorAttorney;
+          document.getElementById('check-treatment').checked = !!currentLead.agentReview.checklist.treatmentDocumented;
+          document.getElementById('check-liability').checked = !!currentLead.agentReview.checklist.liabilityClear;
+        }
+
+        // Set Radio verdict
+        const statusRadios = document.getElementsByName('verdictStatus');
+        for (const radio of statusRadios) {
+          if (radio.value === currentLead.status) {
+            radio.checked = true;
+          }
+        }
+      } else {
+        // Reset form for fresh review
+        document.getElementById('agent-message').value = '';
+        document.getElementById('agent-call-duration').value = '10 mins';
+        checkAllVerification();
+        const statusRadios = document.getElementsByName('verdictStatus');
+        if (statusRadios.length > 0) statusRadios[0].checked = true;
+      }
+
+      // Set Priority radio
+      const prioRadios = document.getElementsByName('priorityLevel');
+      for (const pr of prioRadios) {
+        if (pr.value === (currentLead.priority || 'medium')) {
+          pr.checked = true;
+        }
+      }
+
+      lucide.createIcons();
+    }
+
+    // Call Timer Toggle
+    function toggleCallTimer() {
+      const btn = document.getElementById('start-call-btn');
+      const text = document.getElementById('call-btn-text');
+      const display = document.getElementById('call-timer-display');
+      const digits = document.getElementById('call-timer-digits');
+
+      if (!isCalling) {
+        // Start Call
+        isCalling = true;
+        callSeconds = 0;
+        text.textContent = 'End Call / Hang Up';
+        btn.classList.remove('bg-emerald-600', 'hover:bg-emerald-700');
+        btn.classList.add('bg-rose-600', 'hover:bg-rose-700');
+        display.classList.remove('hidden');
+
+        callTimerInterval = setInterval(() => {
+          callSeconds++;
+          const mins = String(Math.floor(callSeconds / 60)).padStart(2, '0');
+          const secs = String(callSeconds % 60).padStart(2, '0');
+          digits.textContent = `${mins}:${secs}`;
+        }, 1000);
+
+        LegalStore.showToast(`Simulated Call Started to ${currentLead?.contactInfo?.phone || 'claimant'}`);
+      } else {
+        // End Call
+        isCalling = false;
+        clearInterval(callTimerInterval);
+        text.textContent = 'Dial / Start Call';
+        btn.classList.add('bg-emerald-600', 'hover:bg-emerald-700');
+        btn.classList.remove('bg-rose-600', 'hover:bg-rose-700');
+
+        const mins = Math.max(1, Math.round(callSeconds / 60));
+        document.getElementById('agent-call-duration').value = `${mins} min${mins > 1 ? 's' : ''}`;
+        LegalStore.showToast(`Call ended (${callSeconds}s recorded). Ready to complete post-call message.`);
+      }
+      lucide.createIcons();
+    }
+
+    function checkAllVerification() {
+      document.getElementById('check-id').checked = true;
+      document.getElementById('check-sol').checked = true;
+      document.getElementById('check-no-attorney').checked = true;
+      document.getElementById('check-treatment').checked = true;
+      document.getElementById('check-liability').checked = true;
+    }
+
+    function insertSnippet(snippet) {
+      const textarea = document.getElementById('agent-message');
+      if (textarea.value.trim().length > 0) {
+        textarea.value += "\n\n" + snippet;
+      } else {
+        textarea.value = snippet;
+      }
+      textarea.focus();
+    }
+
+    function handleSaveAgentReview(e) {
+      e.preventDefault();
+      if (!currentLead) return;
+
+      const verdictRadios = document.getElementsByName('verdictStatus');
+      let chosenStatus = 'verified';
+      for (const r of verdictRadios) {
+        if (r.checked) chosenStatus = r.value;
+      }
+
+      const priorityRadios = document.getElementsByName('priorityLevel');
+      let chosenPriority = 'medium';
+      for (const pr of priorityRadios) {
+        if (pr.checked) chosenPriority = pr.value;
+      }
+
+      const agentReviewData = {
+        agentName: document.getElementById('agent-name').value.trim(),
+        reviewedAt: new Date().toISOString(),
+        callStatus: document.getElementById('agent-call-status').value,
+        callDuration: document.getElementById('agent-call-duration').value.trim(),
+        isAuthentic: chosenStatus === 'verified',
+        checklist: {
+          idVerified: document.getElementById('check-id').checked,
+          solValid: document.getElementById('check-sol').checked,
+          noPriorAttorney: document.getElementById('check-no-attorney').checked,
+          treatmentDocumented: document.getElementById('check-treatment').checked,
+          liabilityClear: document.getElementById('check-liability').checked
+        },
+        agentMessage: document.getElementById('agent-message').value.trim(),
+        estimatedViability: document.getElementById('agent-viability').value
+      };
+
+      const updated = LegalStore.updateLead(currentLead.id, {
+        status: chosenStatus,
+        priority: chosenPriority,
+        agentReview: agentReviewData
+      });
+
+      LegalStore.showToast(`Lead #${currentLead.id} updated! Status: ${chosenStatus.toUpperCase()}`);
+      loadSelectedLead(currentLead.id);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      LegalStore.renderGlobalNav('agent');
+      refreshLeadList();
+      lucide.createIcons();
+    });
+  </script>
+</body>
+</html>
