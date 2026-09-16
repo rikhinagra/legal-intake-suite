@@ -48,11 +48,13 @@ export async function generateMetadata({
       title: t("title"),
       description: t("description"),
       locale: locale === "es" ? "es_US" : "en_US",
+      images: [{ url: "/opengraph-image", width: 1200, height: 630 }],
     },
     twitter: {
       card: "summary_large_image",
       title: t("title"),
       description: t("description"),
+      images: ["/opengraph-image"],
     },
   };
 }
