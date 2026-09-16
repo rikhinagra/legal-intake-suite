@@ -40,6 +40,7 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 SUPABASE_SECRET_KEY=
 SUPABASE_DB_URL=
 RESEND_API_KEY=
+NEXT_PUBLIC_SITE_URL=
 ```
 
 - The Supabase values come from your Supabase project's API settings.
@@ -48,6 +49,10 @@ RESEND_API_KEY=
 - `RESEND_API_KEY` comes from your Resend account. Note: on Resend's free tier ("sandbox mode"),
   email can only be delivered to the address on your own Resend account until a sending domain is
   verified — see `src/lib/resend.ts`.
+- `NEXT_PUBLIC_SITE_URL` is your deployed site's real URL (e.g. `https://your-app.vercel.app`).
+  Safe to leave empty locally (falls back to `http://localhost:3000`), but required in production —
+  set it in your hosting provider's environment variables. Without it, shared links' preview images
+  point at localhost and never load.
 
 ### 3. Set up the database
 
