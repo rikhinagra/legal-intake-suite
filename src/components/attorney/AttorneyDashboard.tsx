@@ -752,14 +752,6 @@ export default function AttorneyDashboard({ staff }: { staff: StaffProfile }) {
                     {modalLead.agent_review?.estimated_viability ?? "Unrated"}
                   </span>
                 </div>
-                <div id="dashboard-no-print">
-                  <Link
-                    href={`/agent`}
-                    className="inline-flex items-center gap-1 text-xs font-semibold text-blue underline hover:text-ink"
-                  >
-                    Edit Agent Call Notes
-                  </Link>
-                </div>
               </div>
 
               <div>
