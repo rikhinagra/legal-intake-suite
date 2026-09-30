@@ -1,7 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
-import { LogIn, Check } from "lucide-react";
+import { useActionState, useState } from "react";
+import { LogIn, Check, Eye, EyeOff } from "lucide-react";
 import { signIn, type SignInResult } from "@/app/actions/auth";
 import Logo from "@/components/staff/Logo";
 
@@ -16,6 +16,7 @@ export default function LoginPage() {
     signIn,
     undefined
   );
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
     <main className="flex min-h-screen flex-col md:flex-row">
@@ -80,12 +81,27 @@ export default function LoginPage() {
               <label className="mb-1 block text-[13px] font-medium text-charcoal">
                 Password
               </label>
-              <input
-                type="password"
-                name="password"
-                required
-                autoComplete="current-password"
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  required
+                  autoComplete="current-password"
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="absolute top-1/2 right-3 -translate-y-1/2 text-charcoal-soft hover:text-charcoal"
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
             </div>
 
             {state?.error && (
