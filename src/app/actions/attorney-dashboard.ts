@@ -161,6 +161,21 @@ export async function saveFirmAction(
   input: SaveFirmActionInput
 ): Promise<SaveFirmActionResult> {
   const supabase = await createServerSupabaseClient();
+
+  // Captured before the update below so we can tell whether this save
+  // actually changes the case's status vs. a re-save with the same status
+  // (e.g. the attorney just editing notes or reassigning) — the claimant
+  // email always reflects the current status, so re-sending it when the
+  // status hasn't moved would just be an identical repeat email. No prior
+  // row (first-ever save for this case) counts as a change, since that's
+  // the claimant's first time hearing about this status.
+  const { data: existingAction } = await supabase
+    .from("law_firm_actions")
+    .select("status")
+    .eq("lead_id", input.leadId)
+    .maybeSingle();
+  const statusChanged = existingAction?.status !== input.status;
+
   const { error } = await supabase.from("law_firm_actions").upsert(
     {
       lead_id: input.leadId,
@@ -174,13 +189,15 @@ export async function saveFirmAction(
 
   if (error) return { ok: false, error: error.message };
 
-  await notifyClaimantOfFirmStatus({
-    claimantEmail: input.claimantEmail,
-    claimantFirstName: input.claimantFirstName,
-    caseNumber: input.caseNumber ?? input.leadId,
-    status: input.status as FirmStatus,
-    attorneyName: input.assignedAttorneyName,
-  });
+  if (statusChanged) {
+    await notifyClaimantOfFirmStatus({
+      claimantEmail: input.claimantEmail,
+      claimantFirstName: input.claimantFirstName,
+      caseNumber: input.caseNumber ?? input.leadId,
+      status: input.status as FirmStatus,
+      attorneyName: input.assignedAttorneyName,
+    });
+  }
 
   return { ok: true };
 }

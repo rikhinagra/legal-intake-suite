@@ -146,6 +146,17 @@ export async function saveAgentReview(
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Not signed in." };
 
+  // Captured before the update below so we can tell whether this save is
+  // the case's FIRST transition into "verified" (email the attorneys) vs.
+  // a re-save of an already-verified case (no repeat email — the data still
+  // updates either way, just silently).
+  const { data: existingLead } = await supabase
+    .from("leads")
+    .select("status")
+    .eq("id", input.leadId)
+    .single();
+  const wasAlreadyVerified = existingLead?.status === "verified";
+
   const { error: reviewError } = await supabase.from("agent_reviews").upsert(
     {
       lead_id: input.leadId,
@@ -168,7 +179,7 @@ export async function saveAgentReview(
     .eq("id", input.leadId);
   if (leadError) return { ok: false, error: leadError.message };
 
-  if (input.verdictStatus === "verified") {
+  if (input.verdictStatus === "verified" && !wasAlreadyVerified) {
     const { data: profile } = await supabase
       .from("profiles")
       .select("full_name")
