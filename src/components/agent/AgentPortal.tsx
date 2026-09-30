@@ -32,6 +32,24 @@ const STATUS_LABEL: Record<string, string> = {
   rejected: "Rejected",
 };
 
+function buildAgentReviewSnapshot(v: {
+  callStatus: string;
+  callDuration: string;
+  checklist: {
+    idVerified: boolean;
+    solValid: boolean;
+    noPriorAttorney: boolean;
+    treatmentDocumented: boolean;
+    liabilityClear: boolean;
+  };
+  verdict: "verified" | "followup" | "rejected";
+  priority: "low" | "medium" | "high";
+  viability: string;
+  message: string;
+}) {
+  return JSON.stringify(v);
+}
+
 function formatDate(value: string | null) {
   if (!value) return "N/A";
   const d = new Date(value);
@@ -186,6 +204,7 @@ export default function AgentPortal({ staff }: { staff: StaffProfile }) {
   const [savedNotice, setSavedNotice] = useState(false);
   const [showSavedBanner, setShowSavedBanner] = useState(false);
   const [files, setFiles] = useState<LeadFileRow[]>([]);
+  const lastSavedSnapshot = useRef<string | null>(null);
 
   function refreshFiles(leadId: string) {
     getLeadFiles(leadId).then(setFiles);
@@ -207,39 +226,61 @@ export default function AgentPortal({ staff }: { staff: StaffProfile }) {
     getLeadDetail(selectedId).then((detail) => {
       setLead(detail);
       setLoadingLead(false);
+
+      const priority = (detail?.priority as "low" | "medium" | "high") ?? "medium";
+      let loaded: Parameters<typeof buildAgentReviewSnapshot>[0];
+
       if (detail?.agent_review) {
         const r = detail.agent_review;
-        setCallStatus(r.call_status ?? "Connected & Verified");
-        setCallDuration(r.call_duration ?? "");
-        setChecklist({
-          idVerified: !!r.checklist.idVerified,
-          solValid: !!r.checklist.solValid,
-          noPriorAttorney: !!r.checklist.noPriorAttorney,
-          treatmentDocumented: !!r.checklist.treatmentDocumented,
-          liabilityClear: !!r.checklist.liabilityClear,
-        });
-        setMessage(r.agent_message ?? "");
-        setViability(
-          r.estimated_viability ?? "5/5 - High Viability (Clear Liability & Substantial Injury)"
-        );
-        setVerdict(
-          (detail.status as "verified" | "followup" | "rejected") ?? "verified"
-        );
+        loaded = {
+          callStatus: r.call_status ?? "Connected & Verified",
+          callDuration: r.call_duration ?? "",
+          checklist: {
+            idVerified: !!r.checklist.idVerified,
+            solValid: !!r.checklist.solValid,
+            noPriorAttorney: !!r.checklist.noPriorAttorney,
+            treatmentDocumented: !!r.checklist.treatmentDocumented,
+            liabilityClear: !!r.checklist.liabilityClear,
+          },
+          verdict: (detail.status as "verified" | "followup" | "rejected") ?? "verified",
+          priority,
+          viability:
+            r.estimated_viability ?? "5/5 - High Viability (Clear Liability & Substantial Injury)",
+          message: r.agent_message ?? "",
+        };
       } else {
-        setCallStatus("Connected & Verified");
-        setCallDuration("");
-        setChecklist({
-          idVerified: true,
-          solValid: true,
-          noPriorAttorney: true,
-          treatmentDocumented: true,
-          liabilityClear: true,
-        });
-        setMessage("");
-        setViability("5/5 - High Viability (Clear Liability & Substantial Injury)");
-        setVerdict("verified");
+        loaded = {
+          callStatus: "Connected & Verified",
+          callDuration: "",
+          checklist: {
+            idVerified: true,
+            solValid: true,
+            noPriorAttorney: true,
+            treatmentDocumented: true,
+            liabilityClear: true,
+          },
+          verdict: "verified",
+          priority,
+          viability: "5/5 - High Viability (Clear Liability & Substantial Injury)",
+          message: "",
+        };
       }
-      setPriority((detail?.priority as "low" | "medium" | "high") ?? "medium");
+
+      setCallStatus(loaded.callStatus);
+      setCallDuration(loaded.callDuration);
+      setChecklist(loaded.checklist);
+      setMessage(loaded.message);
+      setViability(loaded.viability);
+      setVerdict(loaded.verdict);
+      setPriority(loaded.priority);
+
+      // The form was just populated from what's already saved (or, for a
+      // fresh lead, from the same defaults the "unsaved" state would show) —
+      // sync the dirty-check baseline to match so the button correctly shows
+      // "Saved" immediately, including right after a page refresh, instead
+      // of momentarily treating this programmatic load as an unsaved edit.
+      lastSavedSnapshot.current = buildAgentReviewSnapshot(loaded);
+      setSavedNotice(!!detail?.agent_review);
     });
   }, [selectedId]);
 
@@ -301,8 +342,10 @@ export default function AgentPortal({ staff }: { staff: StaffProfile }) {
   // Once saved, the button switches to a distinct "Saved" state. If the
   // agent then edits anything, this flips savedNotice back off so the
   // button reverts to normal — otherwise it would keep claiming "Saved"
-  // even after new, unsaved edits.
-  const formSnapshot = JSON.stringify({
+  // even after new, unsaved edits. The baseline (lastSavedSnapshot) is set
+  // both here and, on load, in the effect above — see the comment there for
+  // why the load path also needs to sync it.
+  const formSnapshot = buildAgentReviewSnapshot({
     callStatus,
     callDuration,
     checklist,
@@ -311,8 +354,11 @@ export default function AgentPortal({ staff }: { staff: StaffProfile }) {
     viability,
     message,
   });
-  const lastSavedSnapshot = useRef(formSnapshot);
   useEffect(() => {
+    if (lastSavedSnapshot.current === null) {
+      // Nothing loaded yet — the load effect will set the real baseline.
+      return;
+    }
     if (lastSavedSnapshot.current !== formSnapshot) {
       lastSavedSnapshot.current = formSnapshot;
       setSavedNotice(false);
@@ -471,6 +517,12 @@ export default function AgentPortal({ staff }: { staff: StaffProfile }) {
                       </div>
                     </div>
                     <div>
+                      <span className="text-xs font-medium text-charcoal-soft">Did Police Respond to the Scene?</span>
+                      <div className="mt-0.5 font-medium text-ink">
+                        {lead.police_arrived || "N/A"}
+                      </div>
+                    </div>
+                    <div>
                       <span className="text-xs font-medium text-charcoal-soft">Claimant Accident Narrative</span>
                       <p className="mt-1 rounded-[9px] border border-line-soft bg-paper-2 p-3 text-xs leading-relaxed text-charcoal">
                         {lead.accident_description || "No description provided."}
@@ -491,6 +543,10 @@ export default function AgentPortal({ staff }: { staff: StaffProfile }) {
                             >
                               <span className="font-bold text-clay">{p.name}:</span>{" "}
                               <span className="text-charcoal">{p.injury_description}</span>
+                              <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-charcoal-soft">
+                                <span>Seen a doctor: {p.seen_doctor || "N/A"}</span>
+                                <span>Willing to see a doctor: {p.willing_to_see || "N/A"}</span>
+                              </div>
                             </div>
                           ))
                         )}

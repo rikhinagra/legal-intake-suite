@@ -69,6 +69,7 @@ export interface LeadDetail {
   accident_time: string | null;
   accident_description: string | null;
   additional_notes: string | null;
+  police_arrived: string | null;
   created_at: string;
   injured_people: InjuredPersonRow[];
   agent_review: AgentReviewRow | null;

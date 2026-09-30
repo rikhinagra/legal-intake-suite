@@ -36,6 +36,14 @@ import {
 } from "@/app/actions/attorney-dashboard";
 import { getLeadFiles, type LeadFileRow } from "@/app/actions/lead-files";
 
+function buildFirmActionSnapshot(v: {
+  firmStatus: string;
+  assignedAttorneyId: string;
+  firmNotes: string;
+}) {
+  return JSON.stringify(v);
+}
+
 const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
   verified: { label: "Genuine & Authentic", cls: "bg-green-light text-green-deep border-green/30" },
   pending: { label: "Pending Agent Review", cls: "bg-blue-light text-blue border-blue/25" },
@@ -112,6 +120,7 @@ export default function AttorneyDashboard({ staff }: { staff: StaffProfile }) {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [savedNotice, setSavedNotice] = useState(false);
   const [showSavedBanner, setShowSavedBanner] = useState(false);
+  const lastSavedFirmSnapshot = useRef<string | null>(null);
   const [modalFiles, setModalFiles] = useState<LeadFileRow[]>([]);
 
   function refreshModalFiles(leadId: string) {
@@ -165,12 +174,23 @@ export default function AttorneyDashboard({ staff }: { staff: StaffProfile }) {
   }, [leads, search, statusFilter, priorityFilter]);
 
   function openModal(lead: DashboardLead) {
+    const loaded = {
+      firmStatus: lead.firm_action?.status ?? "Under Attorney Review",
+      assignedAttorneyId: lead.firm_action?.assigned_attorney_id ?? "",
+      firmNotes: lead.firm_action?.notes ?? "",
+    };
     setModalLead(lead);
-    setFirmStatus(lead.firm_action?.status ?? "Under Attorney Review");
-    setAssignedAttorneyId(lead.firm_action?.assigned_attorney_id ?? "");
-    setFirmNotes(lead.firm_action?.notes ?? "");
+    setFirmStatus(loaded.firmStatus);
+    setAssignedAttorneyId(loaded.assignedAttorneyId);
+    setFirmNotes(loaded.firmNotes);
     setSaveError(null);
-    setSavedNotice(false);
+    // The form was just populated from what's already saved (or, for a case
+    // with no firm action yet, from the same defaults the "unsaved" state
+    // would show) — sync the dirty-check baseline to match so the button
+    // correctly shows "Saved" immediately for an already-actioned case,
+    // instead of momentarily treating this programmatic load as an edit.
+    lastSavedFirmSnapshot.current = buildFirmActionSnapshot(loaded);
+    setSavedNotice(!!lead.firm_action);
     setShowSavedBanner(false);
     refreshModalFiles(lead.id);
   }
@@ -218,9 +238,19 @@ export default function AttorneyDashboard({ staff }: { staff: StaffProfile }) {
   // state persists until the attorney actually edits something, at which
   // point this flips it back off so the button reverts to the normal
   // actionable state instead of falsely claiming "Saved" over new changes.
-  const firmActionSnapshot = JSON.stringify({ firmStatus, assignedAttorneyId, firmNotes });
-  const lastSavedFirmSnapshot = useRef(firmActionSnapshot);
+  // The baseline (lastSavedFirmSnapshot) is set both here and, when the
+  // modal opens, in openModal() above — see the comment there for why the
+  // open-modal path also needs to sync it.
+  const firmActionSnapshot = buildFirmActionSnapshot({
+    firmStatus,
+    assignedAttorneyId,
+    firmNotes,
+  });
   useEffect(() => {
+    if (lastSavedFirmSnapshot.current === null) {
+      // Modal hasn't been opened yet — openModal() will set the real baseline.
+      return;
+    }
     if (lastSavedFirmSnapshot.current !== firmActionSnapshot) {
       lastSavedFirmSnapshot.current = firmActionSnapshot;
       setSavedNotice(false);
@@ -798,6 +828,10 @@ export default function AttorneyDashboard({ staff }: { staff: StaffProfile }) {
                       <span className="font-medium text-charcoal-soft">Time:</span>{" "}
                       <strong className="text-ink">{modalLead.accident_time || "N/A"}</strong>
                     </div>
+                    <div>
+                      <span className="font-medium text-charcoal-soft">Police Responded:</span>{" "}
+                      <strong className="text-ink">{modalLead.police_arrived || "N/A"}</strong>
+                    </div>
                   </div>
                   <div>
                     <span className="mb-1 block text-xs text-charcoal-soft">
@@ -824,6 +858,10 @@ export default function AttorneyDashboard({ staff }: { staff: StaffProfile }) {
                           >
                             <span className="font-bold text-clay">{p.name}:</span>{" "}
                             <span className="text-charcoal">{p.injury_description}</span>
+                            <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-charcoal-soft">
+                              <span>Seen a doctor: {p.seen_doctor || "N/A"}</span>
+                              <span>Willing to see a doctor: {p.willing_to_see || "N/A"}</span>
+                            </div>
                           </div>
                         ))
                       )}

@@ -59,6 +59,7 @@ export interface DashboardLead {
   accident_time: string | null;
   accident_description: string | null;
   additional_notes: string | null;
+  police_arrived: string | null;
   created_at: string;
   injured_people: DashboardInjuredPerson[];
   agent_review: DashboardAgentReview | null;
