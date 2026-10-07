@@ -3,6 +3,7 @@ import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
+import MetaPixel from "@/components/MetaPixel";
 import { SITE_NAME, SITE_URL } from "@/lib/site-config";
 
 export function generateStaticParams() {
@@ -70,5 +71,10 @@ export default async function LocaleLayout({
 
   setRequestLocale(locale);
 
-  return <NextIntlClientProvider>{children}</NextIntlClientProvider>;
+  return (
+    <NextIntlClientProvider>
+      <MetaPixel />
+      {children}
+    </NextIntlClientProvider>
+  );
 }

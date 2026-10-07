@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 import { IntakeFormData, initialFormData, PendingAttachment } from "@/lib/types";
 import { submitLead } from "@/app/actions/submit-lead";
 import { uploadLeadFilePublic } from "@/lib/upload-lead-file";
+import { trackLeadOnce } from "@/lib/meta-pixel";
 import StepRail from "./StepRail";
 import StepCase from "./steps/StepCase";
 import StepContact from "./steps/StepContact";
@@ -194,6 +195,10 @@ export default function IntakeWizard() {
       setSubmitError(result.error);
       return;
     }
+
+    // Fired as soon as the lead is saved, before file uploads, so a failed
+    // attachment doesn't lose a conversion that really happened.
+    trackLeadOnce(result.leadId);
 
     if (attachments.length > 0) {
       const uploadResults = await Promise.all(

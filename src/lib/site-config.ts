@@ -10,6 +10,10 @@ export const SITE_URL = (
 
 export const SITE_NAME = "Case Intake";
 
+// Public identifier (it ships in the page source by design), so it lives
+// here rather than in an env var. Dataset: "Commercial Vehicle Acci...".
+export const META_PIXEL_ID = "927425249990026";
+
 export const SITE_TITLE = "Free Confidential Case Review";
 
 export const SITE_DESCRIPTION =
