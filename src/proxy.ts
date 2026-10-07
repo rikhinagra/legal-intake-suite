@@ -8,7 +8,15 @@ const intlMiddleware = createMiddleware(routing);
 // Internal staff tools (agent portal, attorney dashboard, auth pages) are
 // English-only and live outside the [locale] segment, so next-intl's
 // locale-prefix logic should never run for them.
-const STAFF_PATHS = ["/agent", "/dashboard", "/login", "/signup"];
+const STAFF_PATHS = [
+  "/agent",
+  "/dashboard",
+  "/login",
+  "/signup",
+  "/forgot-password",
+  "/reset-password",
+  "/auth/",
+];
 
 export default async function proxy(request: NextRequest) {
   const isStaffPath = STAFF_PATHS.some((path) => request.nextUrl.pathname.startsWith(path));
