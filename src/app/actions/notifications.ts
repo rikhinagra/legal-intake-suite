@@ -2,6 +2,7 @@
 
 import { render } from "@react-email/render";
 import { createAdminClient } from "@/lib/supabase/admin-client";
+import { getAgentNotificationRecipients } from "@/lib/notification-recipients";
 import { getResendClient, EMAIL_FROM } from "@/lib/resend";
 import { SITE_URL } from "@/lib/site-config";
 import NewLeadEmail from "@/emails/NewLeadEmail";
@@ -64,7 +65,7 @@ export async function notifyAgentsOfNewLead(input: {
   caseType: string;
 }) {
   try {
-    const emails = await getStaffEmails(["agent", "admin"]);
+    const emails = await getAgentNotificationRecipients(createAdminClient());
     if (emails.length === 0) return;
 
     const html = await render(
