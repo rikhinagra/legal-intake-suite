@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { submitBusinessRegistration } from "@/app/actions/submit-business-registration";
+import { trackLeadOnce } from "@/lib/meta-pixel";
 import Field from "@/components/ui/Field";
 import PillGroup from "@/components/ui/PillGroup";
 import Dropdown from "@/components/ui/Dropdown";
@@ -53,10 +55,14 @@ const initialData: BusinessFormData = {
 
 export default function BusinessForm() {
   const t = useTranslations("landing.business");
+  const locale = useLocale();
   const [data, setData] = useState<BusinessFormData>(initialData);
   const [invalid, setInvalid] = useState<Set<string>>(new Set());
   const [showMore, setShowMore] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState(false);
+  const [registrationNumber, setRegistrationNumber] = useState<string | null>(null);
 
   const update = (patch: Partial<BusinessFormData>) => setData((prev) => ({ ...prev, ...patch }));
   const has = (id: string) => invalid.has(id);
@@ -90,8 +96,9 @@ export default function BusinessForm() {
     { value: "Other", label: t("type8") },
   ];
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (submitting) return;
     const next = new Set<string>();
     if (!data.company.trim()) next.add("company");
     if (!data.contact.trim()) next.add("contact");
@@ -103,7 +110,36 @@ export default function BusinessForm() {
     setInvalid(next);
     if (next.size > 0) return;
 
-    // Preview only: the registration is not stored or sent anywhere yet.
+    setSubmitting(true);
+    setSubmitError(false);
+    const result = await submitBusinessRegistration({
+      company: data.company,
+      contact: data.contact,
+      phone: data.phone,
+      email: data.email,
+      fleet: data.fleet,
+      need: data.need,
+      companyType: data.companyType,
+      role: data.role,
+      dot: data.dot,
+      drivers: data.drivers,
+      states: data.states,
+      carrier: data.carrier,
+      counsel: data.counsel,
+      method: data.method,
+      message: data.message,
+      consent: data.consent,
+      language: locale === "es" ? "Spanish" : "English",
+    });
+    setSubmitting(false);
+
+    if (!result.ok) {
+      setSubmitError(true);
+      return;
+    }
+
+    trackLeadOnce(result.registrationId);
+    setRegistrationNumber(result.registrationNumber);
     setSubmitted(true);
   }
 
@@ -125,6 +161,11 @@ export default function BusinessForm() {
         <p className="mx-auto mt-3 max-w-[40ch] text-[14.5px] text-charcoal-soft">
           {t("successMessage")}
         </p>
+        {registrationNumber && (
+          <p className="mono mx-auto mt-5 inline-block rounded-full border border-line-soft bg-paper px-4 py-1.5 text-[12px] tracking-[0.06em] text-charcoal-soft">
+            {t("successReference", { number: registrationNumber })}
+          </p>
+        )}
       </div>
     );
   }
@@ -301,11 +342,21 @@ export default function BusinessForm() {
       </label>
       {has("consent") && <p className="mt-1.5 text-[12px] text-clay">{t("consentError")}</p>}
 
+      {submitError && (
+        <p
+          role="alert"
+          className="mt-4 rounded-[9px] border border-rose-200 bg-rose-50 px-4 py-3 text-[13px] text-rose-700"
+        >
+          {t("submitError")}
+        </p>
+      )}
+
       <button
         type="submit"
-        className="mt-6 flex w-full items-center justify-center rounded-[9px] bg-blue px-[26px] py-[14px] text-[14.5px] font-semibold text-white transition-all hover:bg-ink hover:shadow-[0_6px_16px_rgba(11,76,245,0.3)]"
+        disabled={submitting}
+        className="mt-6 flex w-full items-center justify-center rounded-[9px] bg-blue px-[26px] py-[14px] text-[14.5px] font-semibold text-white transition-all hover:bg-ink hover:shadow-[0_6px_16px_rgba(11,76,245,0.3)] disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {t("submit")}
+        {submitting ? t("submitting") : t("submit")}
       </button>
     </form>
   );

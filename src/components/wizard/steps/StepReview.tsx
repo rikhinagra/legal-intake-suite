@@ -158,11 +158,25 @@ export default function StepReview({
   const tCase = useTranslations("stepCase");
   const tAccident = useTranslations("stepAccident");
   const tContact = useTranslations("stepContact");
+  const tInjuries = useTranslations("stepInjuries");
 
   const translateYesNo = (value: string) => {
     if (value === "Yes") return tCommon("yes");
     if (value === "No") return tCommon("no");
     return value;
+  };
+
+  const translateTreatment = (value: string) => {
+    switch (value) {
+      case "Yes, ER or hospital":
+        return tInjuries("treatmentHospital");
+      case "Yes, doctor or clinic":
+        return tInjuries("treatmentClinic");
+      case "Not yet":
+        return tInjuries("treatmentNotYet");
+      default:
+        return value;
+    }
   };
 
   const translateBestTime = (value: string) => {
@@ -260,6 +274,10 @@ export default function StepReview({
               label={t("fieldPoliceResponded")}
               value={translatePolice(data.policeArrived)}
             />
+            <ReviewItem
+              label={t("fieldInsuranceContacted")}
+              value={translateYesNo(data.insuranceContacted)}
+            />
           </div>
           <div className="mt-2.5">
             <ReviewItem label={t("fieldDescription")} value={data.description} />
@@ -291,6 +309,13 @@ export default function StepReview({
               </div>
             ))
           )}
+          <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 max-md:grid-cols-1">
+            <ReviewItem
+              label={t("fieldMedicalTreatment")}
+              value={translateTreatment(data.medicalTreatment)}
+            />
+            <ReviewItem label={t("fieldMissedWork")} value={translateYesNo(data.missedWork)} />
+          </div>
         </div>
       </div>
 

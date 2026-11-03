@@ -35,9 +35,12 @@ export interface IntakeFormData {
   accTime: string;
   bestTime: string;
   policeArrived: "" | "Yes" | "No" | "Not sure";
+  insuranceContacted: YesNo;
   description: string;
 
   injuries: InjuryEntry[];
+  medicalTreatment: "" | "Yes, ER or hospital" | "Yes, doctor or clinic" | "Not yet";
+  missedWork: YesNo;
 
   consent: boolean;
 }
@@ -74,9 +77,12 @@ export const initialFormData: IntakeFormData = {
   accTime: "",
   bestTime: "",
   policeArrived: "",
+  insuranceContacted: "",
   description: "",
 
   injuries: [],
+  medicalTreatment: "",
+  missedWork: "",
 
   consent: false,
 };

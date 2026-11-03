@@ -40,6 +40,9 @@ export async function submitLead(
       accident_time: data.accTime || null,
       best_time_to_call: data.bestTime || null,
       police_arrived: data.policeArrived || null,
+      insurance_contacted: data.insuranceContacted || null,
+      medical_treatment: data.medicalTreatment || null,
+      missed_work: data.missedWork || null,
       accident_description: data.description.trim(),
       consent: data.consent,
   });

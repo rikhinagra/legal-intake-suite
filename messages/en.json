@@ -100,7 +100,10 @@
     "policeNotSure": "Not sure",
     "descriptionLabel": "Describe what happened",
     "descriptionError": "Please share at least a full sentence (10+ characters).",
-    "descriptionPlaceholder": "e.g. It was raining heavily and visibility was poor when..."
+    "descriptionPlaceholder": "e.g. It was raining heavily and visibility was poor when...",
+    "insuranceLabel": "Has an insurance company contacted you?",
+    "insuranceYes": "Yes",
+    "insuranceNo": "No"
   },
   "stepInjuries": {
     "title": "Injuries",
@@ -122,7 +125,14 @@
     "willingLabel": "Willing to see a doctor?",
     "willingYes": "Yes",
     "willingNo": "No",
-    "addAnother": "Add another injured person"
+    "addAnother": "Add another injured person",
+    "treatmentLabel": "Did you receive medical treatment?",
+    "treatmentHospital": "Yes, ER or hospital",
+    "treatmentClinic": "Yes, doctor or clinic",
+    "treatmentNotYet": "Not yet",
+    "missedWorkLabel": "Did you miss work because of the accident?",
+    "missedWorkYes": "Yes",
+    "missedWorkNo": "No"
   },
   "stepReview": {
     "title": "Review your case",
@@ -157,7 +167,10 @@
     "addFilesButton": "Add files",
     "removeFile": "Remove",
     "uploadingFiles": "Uploading attachments...",
-    "uploadPartialError": "Your case was submitted, but {count} file(s) failed to upload. You can email them to us instead."
+    "uploadPartialError": "Your case was submitted, but {count} file(s) failed to upload. You can email them to us instead.",
+    "fieldInsuranceContacted": "Insurance company contacted you",
+    "fieldMedicalTreatment": "Medical treatment",
+    "fieldMissedWork": "Missed work"
   },
   "successPanel": {
     "title": "Your case has been received",
@@ -267,7 +280,9 @@
       "submit": "Register my business free",
       "submitting": "Sending...",
       "successTitle": "Request received",
-      "successMessage": "Thank you. Your business registration is received. Our team will contact you within 24 hours to confirm."
+      "successMessage": "Thank you. Your business registration is received. Our team will contact you within 24 hours to confirm.",
+      "submitError": "Something went wrong and your registration was not sent. Please try again.",
+      "successReference": "Reference number: {number}"
     },
     "sections": {
       "servicesTitleAccident": "How we help after an accident",

@@ -87,6 +87,18 @@ export default function StepAccident({ data, update, invalid }: StepAccidentProp
         />
       </Field>
 
+      <Field label={t("insuranceLabel")} optional>
+        <PillGroup
+          name="insurance-contacted"
+          value={data.insuranceContacted}
+          onChange={(v) => update({ insuranceContacted: v as IntakeFormData["insuranceContacted"] })}
+          options={[
+            { value: "Yes", label: t("insuranceYes") },
+            { value: "No", label: t("insuranceNo") },
+          ]}
+        />
+      </Field>
+
       <Field
         label={t("descriptionLabel")}
         required

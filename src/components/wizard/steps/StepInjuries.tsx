@@ -159,6 +159,32 @@ export default function StepInjuries({ data, update, invalid }: StepInjuriesProp
       >
         <Plus className="h-4 w-4" /> {t("addAnother")}
       </button>
+
+      <div className="mt-6">
+        <Field label={t("treatmentLabel")} optional>
+          <PillGroup
+            name="medical-treatment"
+            value={data.medicalTreatment}
+            onChange={(v) => update({ medicalTreatment: v as IntakeFormData["medicalTreatment"] })}
+            options={[
+              { value: "Yes, ER or hospital", label: t("treatmentHospital") },
+              { value: "Yes, doctor or clinic", label: t("treatmentClinic") },
+              { value: "Not yet", label: t("treatmentNotYet") },
+            ]}
+          />
+        </Field>
+        <Field label={t("missedWorkLabel")} optional>
+          <PillGroup
+            name="missed-work"
+            value={data.missedWork}
+            onChange={(v) => update({ missedWork: v as IntakeFormData["missedWork"] })}
+            options={[
+              { value: "Yes", label: t("missedWorkYes") },
+              { value: "No", label: t("missedWorkNo") },
+            ]}
+          />
+        </Field>
+      </div>
     </div>
   );
 }

@@ -100,7 +100,10 @@
     "policeNotSure": "No estoy seguro",
     "descriptionLabel": "Describe lo que sucedió",
     "descriptionError": "Por favor comparte al menos una oración completa (10 o más caracteres).",
-    "descriptionPlaceholder": "Ej. Estaba lloviendo mucho y la visibilidad era mala cuando..."
+    "descriptionPlaceholder": "Ej. Estaba lloviendo mucho y la visibilidad era mala cuando...",
+    "insuranceLabel": "¿Se ha comunicado una aseguradora contigo?",
+    "insuranceYes": "Sí",
+    "insuranceNo": "No"
   },
   "stepInjuries": {
     "title": "Lesiones",
@@ -122,7 +125,14 @@
     "willingLabel": "¿Está dispuesto a ver a un médico?",
     "willingYes": "Sí",
     "willingNo": "No",
-    "addAnother": "Agregar otra persona lesionada"
+    "addAnother": "Agregar otra persona lesionada",
+    "treatmentLabel": "¿Recibiste tratamiento médico?",
+    "treatmentHospital": "Sí, sala de emergencias u hospital",
+    "treatmentClinic": "Sí, médico o clínica",
+    "treatmentNotYet": "Todavía no",
+    "missedWorkLabel": "¿Faltaste al trabajo por el accidente?",
+    "missedWorkYes": "Sí",
+    "missedWorkNo": "No"
   },
   "stepReview": {
     "title": "Revisa tu caso",
@@ -157,7 +167,10 @@
     "addFilesButton": "Agregar archivos",
     "removeFile": "Quitar",
     "uploadingFiles": "Subiendo archivos adjuntos...",
-    "uploadPartialError": "Tu caso fue enviado, pero {count} archivo(s) no se pudieron subir. Puedes enviárnoslos por correo electrónico."
+    "uploadPartialError": "Tu caso fue enviado, pero {count} archivo(s) no se pudieron subir. Puedes enviárnoslos por correo electrónico.",
+    "fieldInsuranceContacted": "Una aseguradora se comunicó contigo",
+    "fieldMedicalTreatment": "Tratamiento médico",
+    "fieldMissedWork": "Faltó al trabajo"
   },
   "successPanel": {
     "title": "Tu caso ha sido recibido",
@@ -267,7 +280,9 @@
       "submit": "Registrar mi negocio gratis",
       "submitting": "Enviando...",
       "successTitle": "Solicitud recibida",
-      "successMessage": "Gracias. Recibimos el registro de tu negocio. Nuestro equipo te contactará en 24 horas para confirmar."
+      "successMessage": "Gracias. Recibimos el registro de tu negocio. Nuestro equipo te contactará en 24 horas para confirmar.",
+      "submitError": "Algo salió mal y tu registro no se envió. Por favor intenta de nuevo.",
+      "successReference": "Número de referencia: {number}"
     },
     "sections": {
       "servicesTitleAccident": "Cómo te ayudamos después de un accidente",
