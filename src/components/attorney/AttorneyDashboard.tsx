@@ -26,6 +26,7 @@ import Link from "next/link";
 import StaffNav from "@/components/staff/StaffNav";
 import AttachmentsPanel from "@/components/shared/AttachmentsPanel";
 import Dropdown from "@/components/ui/Dropdown";
+import BusinessRegistrationsDashboard from "@/components/attorney/BusinessRegistrationsDashboard";
 import type { StaffProfile } from "@/lib/supabase/auth-helpers";
 import {
   getDashboardLeads,
@@ -35,6 +36,7 @@ import {
   type AttorneyOption,
 } from "@/app/actions/attorney-dashboard";
 import { getLeadFiles, type LeadFileRow } from "@/app/actions/lead-files";
+import { getAwaitingDecisionCount } from "@/app/actions/business-registrations";
 
 function buildFirmActionSnapshot(v: {
   firmStatus: string;
@@ -103,7 +105,17 @@ function escapeCsv(value: string) {
   return `"${value.replace(/"/g, '""')}"`;
 }
 
-export default function AttorneyDashboard({ staff }: { staff: StaffProfile }) {
+export type AttorneyDashboardView = "accident" | "business";
+
+export default function AttorneyDashboard({
+  staff,
+  initialView = "accident",
+}: {
+  staff: StaffProfile;
+  initialView?: AttorneyDashboardView;
+}) {
+  const [view, setView] = useState<AttorneyDashboardView>(initialView);
+  const [awaitingBusinessCount, setAwaitingBusinessCount] = useState(0);
   const [leads, setLeads] = useState<DashboardLead[]>([]);
   const [attorneys, setAttorneys] = useState<AttorneyOption[]>([]);
   const [loading, setLoading] = useState(true);
@@ -141,6 +153,16 @@ export default function AttorneyDashboard({ staff }: { staff: StaffProfile }) {
   useEffect(() => {
     loadAll();
   }, []);
+
+  function refreshAwaitingBusinessCount() {
+    getAwaitingDecisionCount()
+      .then(setAwaitingBusinessCount)
+      .catch(() => {
+        // the tab badge is a convenience, so a failed count just leaves it as it was
+      });
+  }
+
+  useEffect(refreshAwaitingBusinessCount, []);
 
   const metrics = useMemo(() => {
     return {
@@ -279,6 +301,9 @@ export default function AttorneyDashboard({ staff }: { staff: StaffProfile }) {
       "Case Type",
       "Accident Date",
       "Injuries Count",
+      "Insurance Contacted",
+      "Medical Treatment",
+      "Missed Work",
       "Agent Verified",
       "Agent Post-Call Notes",
       "Firm Status",
@@ -296,6 +321,9 @@ export default function AttorneyDashboard({ staff }: { staff: StaffProfile }) {
       escapeCsv(l.case_type),
       l.accident_date ?? "",
       String(l.injured_people.length),
+      escapeCsv(l.insurance_contacted ?? ""),
+      escapeCsv(l.medical_treatment ?? ""),
+      escapeCsv(l.missed_work ?? ""),
       l.agent_review ? (l.agent_review.is_authentic ? "YES" : "NO") : "PENDING",
       escapeCsv(l.agent_review?.agent_message ?? ""),
       escapeCsv(l.firm_action?.status ?? "Unassigned"),
@@ -345,241 +373,160 @@ export default function AttorneyDashboard({ staff }: { staff: StaffProfile }) {
           </div>
         </div>
 
-        <div id="dashboard-no-print" className="grid grid-cols-2 gap-3.5 sm:gap-4 md:grid-cols-5">
-          {[
-            { label: "Total Leads", value: metrics.total, icon: Inbox, sub: "All captured intakes" },
-            {
-              label: "Authentic Leads",
-              value: metrics.verified,
-              icon: BadgeCheck,
-              sub: "Certified by agent call",
-              tone: "text-green-deep",
-            },
-            {
-              label: "Pending Call",
-              value: metrics.pending,
-              icon: Clock,
-              sub: "Awaiting agent interview",
-              tone: "text-blue",
-            },
-            {
-              label: "High Priority",
-              value: metrics.high,
-              icon: Flame,
-              sub: "Acute injury / Commercial",
-              tone: "text-clay",
-            },
-            {
-              label: "Retained",
-              value: metrics.retained,
-              icon: Award,
-              sub: "Representation signed",
-              tone: "text-blue",
-              wide: true,
-            },
-          ].map((m) => (
-            <div
-              key={m.label}
-              className={`rounded-[14px] border border-line bg-card p-4 shadow-[var(--shadow)] sm:p-5 ${
-                m.wide ? "col-span-2 md:col-span-1" : ""
+        <div
+          id="dashboard-no-print"
+          role="tablist"
+          aria-label="Attorney Dashboard sections"
+          className="inline-flex rounded-[12px] border border-line bg-card p-1 shadow-[var(--shadow)]"
+        >
+          {(
+            [
+              ["accident", "Accident Cases"],
+              ["business", "Business Registrations"],
+            ] as const
+          ).map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={view === id}
+              onClick={() => setView(id)}
+              className={`flex items-center gap-2 rounded-[9px] px-3.5 py-2 text-[13px] font-semibold transition sm:text-[14px] ${
+                view === id
+                  ? "bg-blue text-white shadow-[0_2px_8px_rgba(11,76,245,0.25)]"
+                  : "text-charcoal-soft hover:bg-paper-2 hover:text-ink"
               }`}
             >
-              <div
-                className={`mb-2 flex items-center justify-between text-xs font-semibold uppercase tracking-wider ${
-                  m.tone ?? "text-charcoal-soft"
-                }`}
-              >
-                <span>{m.label}</span>
-                <m.icon className="h-4 w-4 opacity-70" />
-              </div>
-              <div className={`text-2xl font-bold sm:text-3xl ${m.tone ?? "text-ink"}`}>
-                {m.value}
-              </div>
-              <div className="mt-1 text-[11px] text-charcoal-soft">{m.sub}</div>
-            </div>
+              {label}
+              {id === "business" && awaitingBusinessCount > 0 && (
+                <span
+                  className={`rounded-full px-1.5 py-0.5 text-[11px] leading-none font-bold ${
+                    view === id ? "bg-white text-blue" : "bg-clay text-white"
+                  }`}
+                >
+                  {awaitingBusinessCount} awaiting
+                </span>
+              )}
+            </button>
           ))}
         </div>
 
-        <div
-          id="dashboard-no-print"
-          className="flex flex-col gap-3 rounded-[14px] border border-line bg-card p-4 shadow-[var(--shadow)] md:flex-row md:items-center md:justify-between"
-        >
-          <div className="relative max-w-md flex-1">
-            <Search className="absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-charcoal-soft" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by claimant name, phone, or keyword..."
-              className="!pl-9 !text-[13px]"
-            />
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Dropdown
-              value={statusFilter}
-              onChange={setStatusFilter}
-              wrapperClassName=""
-              triggerClassName="w-auto !text-[13px] font-medium"
-              options={STATUS_FILTER_OPTIONS}
-            />
-            <Dropdown
-              value={priorityFilter}
-              onChange={setPriorityFilter}
-              wrapperClassName=""
-              triggerClassName="w-auto !text-[13px] font-medium"
-              options={PRIORITY_FILTER_OPTIONS}
-            />
-            <button
-              onClick={exportCSV}
-              className="inline-flex h-9 items-center gap-1.5 rounded-[9px] border border-line px-3 text-xs font-medium text-charcoal transition hover:bg-paper-2"
-            >
-              <Download className="h-3.5 w-3.5 text-charcoal-soft" /> Export CSV
-            </button>
-          </div>
-        </div>
-
-        <div className="overflow-hidden rounded-[14px] border border-line bg-card shadow-[var(--shadow)]">
-          <div className="flex items-center justify-between border-b border-line-soft px-5 py-4">
-            <h2 className="flex items-center gap-2 text-sm font-bold text-ink">
-              <FolderOpen className="h-4 w-4 text-blue" /> Claimant Dossiers & Agent Verification
-              Log
-            </h2>
-            <span className="text-xs font-medium text-charcoal-soft">
-              Showing {filtered.length} case{filtered.length === 1 ? "" : "s"}
-            </span>
-          </div>
-
-          {/* Mobile/tablet: stacked cards, no horizontal scroll */}
-          <div className="divide-y divide-line-soft lg:hidden">
-            {loading ? (
-              <div className="px-5 py-8 text-center text-sm text-charcoal-soft">Loading...</div>
-            ) : filtered.length === 0 ? (
-              <div className="px-5 py-8 text-center text-sm text-charcoal-soft">
-                No case records match your current filters.
-              </div>
-            ) : (
-              filtered.map((l) => {
-                const badge = STATUS_BADGE[l.status] ?? {
-                  label: l.status,
-                  cls: "bg-paper-2 text-charcoal-soft border-line",
-                };
-                return (
-                  <button
-                    key={l.id}
-                    type="button"
-                    onClick={() => openModal(l)}
-                    className="block w-full px-4 py-4 text-left transition hover:bg-paper-2/80"
+        {view === "business" ? (
+          <BusinessRegistrationsDashboard onChanged={refreshAwaitingBusinessCount} />
+        ) : (
+          <>
+            <div id="dashboard-no-print" className="grid grid-cols-2 gap-3.5 sm:gap-4 md:grid-cols-5">
+              {[
+                { label: "Total Leads", value: metrics.total, icon: Inbox, sub: "All captured intakes" },
+                {
+                  label: "Authentic Leads",
+                  value: metrics.verified,
+                  icon: BadgeCheck,
+                  sub: "Certified by agent call",
+                  tone: "text-green-deep",
+                },
+                {
+                  label: "Pending Call",
+                  value: metrics.pending,
+                  icon: Clock,
+                  sub: "Awaiting agent interview",
+                  tone: "text-blue",
+                },
+                {
+                  label: "High Priority",
+                  value: metrics.high,
+                  icon: Flame,
+                  sub: "Acute injury / Commercial",
+                  tone: "text-clay",
+                },
+                {
+                  label: "Retained",
+                  value: metrics.retained,
+                  icon: Award,
+                  sub: "Representation signed",
+                  tone: "text-blue",
+                  wide: true,
+                },
+              ].map((m) => (
+                <div
+                  key={m.label}
+                  className={`rounded-[14px] border border-line bg-card p-4 shadow-[var(--shadow)] sm:p-5 ${
+                    m.wide ? "col-span-2 md:col-span-1" : ""
+                  }`}
+                >
+                  <div
+                    className={`mb-2 flex items-center justify-between text-xs font-semibold uppercase tracking-wider ${
+                      m.tone ?? "text-charcoal-soft"
+                    }`}
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <span className="mono block text-sm font-bold text-ink">
-                          {l.case_number ?? l.id.slice(0, 8)}
-                        </span>
-                        <span className="text-[11px] text-charcoal-soft">
-                          {formatDate(l.created_at)}
-                        </span>
-                      </div>
-                      <span
-                        className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold ${badge.cls}`}
-                      >
-                        {badge.label}
-                      </span>
-                    </div>
+                    <span>{m.label}</span>
+                    <m.icon className="h-4 w-4 opacity-70" />
+                  </div>
+                  <div className={`text-2xl font-bold sm:text-3xl ${m.tone ?? "text-ink"}`}>
+                    {m.value}
+                  </div>
+                  <div className="mt-1 text-[11px] text-charcoal-soft">{m.sub}</div>
+                </div>
+              ))}
+            </div>
 
-                    <div className="mt-3 font-bold text-ink">
-                      {l.first_name} {l.last_name}
-                    </div>
-                    <div className="mono text-[12px] text-charcoal-soft">{l.phone}</div>
+            <div
+              id="dashboard-no-print"
+              className="flex flex-col gap-3 rounded-[14px] border border-line bg-card p-4 shadow-[var(--shadow)] md:flex-row md:items-center md:justify-between"
+            >
+              <div className="relative max-w-md flex-1">
+                <Search className="absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-charcoal-soft" />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search by claimant name, phone, or keyword..."
+                  className="!pl-9 !text-[13px]"
+                />
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Dropdown
+                  value={statusFilter}
+                  onChange={setStatusFilter}
+                  wrapperClassName=""
+                  triggerClassName="w-auto !text-[13px] font-medium"
+                  options={STATUS_FILTER_OPTIONS}
+                />
+                <Dropdown
+                  value={priorityFilter}
+                  onChange={setPriorityFilter}
+                  wrapperClassName=""
+                  triggerClassName="w-auto !text-[13px] font-medium"
+                  options={PRIORITY_FILTER_OPTIONS}
+                />
+                <button
+                  onClick={exportCSV}
+                  className="inline-flex h-9 items-center gap-1.5 rounded-[9px] border border-line px-3 text-xs font-medium text-charcoal transition hover:bg-paper-2"
+                >
+                  <Download className="h-3.5 w-3.5 text-charcoal-soft" /> Export CSV
+                </button>
+              </div>
+            </div>
 
-                    <div className="mt-2 text-[13px] text-charcoal">
-                      {l.case_type}{" "}
-                      <span className="text-charcoal-soft">
-                        · Accident {formatDate(l.accident_date)}
-                      </span>
-                    </div>
+            <div className="overflow-hidden rounded-[14px] border border-line bg-card shadow-[var(--shadow)]">
+              <div className="flex items-center justify-between border-b border-line-soft px-5 py-4">
+                <h2 className="flex items-center gap-2 text-sm font-bold text-ink">
+                  <FolderOpen className="h-4 w-4 text-blue" /> Claimant Dossiers & Agent Verification
+                  Log
+                </h2>
+                <span className="text-xs font-medium text-charcoal-soft">
+                  Showing {filtered.length} case{filtered.length === 1 ? "" : "s"}
+                </span>
+              </div>
 
-                    <div className="mt-3 border-t border-line-soft pt-3">
-                      {l.agent_review ? (
-                        <div className="flex items-start gap-1.5 text-xs text-charcoal">
-                          <Check className="mt-0.5 h-3 w-3 shrink-0 text-green-deep" />
-                          <span>
-                            <span className="font-bold text-green-deep">
-                              {l.agent_review.call_status}:
-                            </span>{" "}
-                            &quot;{l.agent_review.agent_message}&quot;
-                            <span className="mt-0.5 block text-[10px] text-charcoal-soft">
-                              {l.agent_review.agent_name} ·{" "}
-                              {l.agent_review.call_duration ?? "N/A"}
-                            </span>
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="flex items-center gap-1 text-xs text-blue italic">
-                          <PhoneCall className="h-3 w-3" /> Awaiting Agent Call
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="mt-3 flex items-center justify-between gap-3 border-t border-line-soft pt-3">
-                      <div>
-                        {l.firm_action ? (
-                          <>
-                            <span
-                              className={`inline-flex items-center rounded px-2 py-0.5 text-[11px] font-semibold ${
-                                l.firm_action.status === "Retained"
-                                  ? "bg-blue-light text-blue"
-                                  : "bg-paper-2 text-charcoal-soft"
-                              }`}
-                            >
-                              {FIRM_STATUS_LABEL[l.firm_action.status] ?? l.firm_action.status}
-                            </span>
-                            <div className="mt-0.5 text-[10px] text-charcoal-soft">
-                              {l.firm_action.assigned_attorney_name ?? "Unassigned"}
-                            </div>
-                          </>
-                        ) : (
-                          <span className="text-[11px] text-charcoal-soft">New / Unassigned</span>
-                        )}
-                      </div>
-                      <span className="inline-flex shrink-0 items-center gap-1 rounded-[9px] bg-blue-light px-2.5 py-1.5 text-xs font-semibold text-blue">
-                        <Eye className="h-3.5 w-3.5" /> Inspect
-                      </span>
-                    </div>
-                  </button>
-                );
-              })
-            )}
-          </div>
-
-          {/* Desktop: full table. table-fixed + explicit column widths keep all
-              seven columns inside the card at lg/xl widths instead of letting
-              wide content (the post-call quote) push Action off-screen. */}
-          <div className="hidden lg:block">
-            <table className="w-full table-fixed border-collapse text-left text-sm">
-              <thead>
-                <tr className="border-b border-line-soft bg-paper-2 text-[11px] font-bold tracking-wider text-charcoal-soft uppercase">
-                  <th className="w-[15%] px-3 py-3">Lead ID / Date</th>
-                  <th className="w-[12%] px-3 py-3">Claimant Details</th>
-                  <th className="w-[10%] px-3 py-3">Case & Accident</th>
-                  <th className="w-[16%] px-3 py-3">Agent Verification</th>
-                  <th className="w-[18%] px-3 py-3">Post-Call Message</th>
-                  <th className="w-[18%] px-3 py-3">Firm Status</th>
-                  <th className="w-[11%] px-3 py-3 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-line-soft">
+              {/* Mobile/tablet: stacked cards, no horizontal scroll */}
+              <div className="divide-y divide-line-soft lg:hidden">
                 {loading ? (
-                  <tr>
-                    <td colSpan={7} className="py-8 text-center text-charcoal-soft">
-                      Loading...
-                    </td>
-                  </tr>
+                  <div className="px-5 py-8 text-center text-sm text-charcoal-soft">Loading...</div>
                 ) : filtered.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="py-8 text-center text-charcoal-soft">
-                      No case records match your current filters.
-                    </td>
-                  </tr>
+                  <div className="px-5 py-8 text-center text-sm text-charcoal-soft">
+                    No case records match your current filters.
+                  </div>
                 ) : (
                   filtered.map((l) => {
                     const badge = STATUS_BADGE[l.status] ?? {
@@ -587,108 +534,233 @@ export default function AttorneyDashboard({ staff }: { staff: StaffProfile }) {
                       cls: "bg-paper-2 text-charcoal-soft border-line",
                     };
                     return (
-                      <tr
+                      <button
                         key={l.id}
+                        type="button"
                         onClick={() => openModal(l)}
-                        className="cursor-pointer transition hover:bg-paper-2/80"
+                        className="block w-full px-4 py-4 text-left transition hover:bg-paper-2/80"
                       >
-                        <td className="px-3 py-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <span className="mono block text-sm font-bold text-ink">
+                              {l.case_number ?? l.id.slice(0, 8)}
+                            </span>
+                            <span className="text-[11px] text-charcoal-soft">
+                              {formatDate(l.created_at)}
+                            </span>
+                          </div>
                           <span
-                            className="mono block truncate font-bold text-ink"
-                            title={l.case_number ?? l.id.slice(0, 8)}
-                          >
-                            {l.case_number ?? l.id.slice(0, 8)}
-                          </span>
-                          <span className="text-[11px] whitespace-nowrap text-charcoal-soft">
-                            {formatDate(l.created_at)}
-                          </span>
-                        </td>
-                        <td className="px-3 py-3">
-                          <div className="truncate font-bold text-ink">
-                            {l.first_name} {l.last_name}
-                          </div>
-                          <div className="mono truncate text-[11px] text-charcoal-soft">
-                            {l.phone}
-                          </div>
-                        </td>
-                        <td className="px-3 py-3">
-                          <div className="truncate font-medium text-charcoal">{l.case_type}</div>
-                          <div className="text-[11px] whitespace-nowrap text-charcoal-soft">
-                            Accident: {formatDate(l.accident_date)}
-                          </div>
-                        </td>
-                        <td className="px-3 py-3">
-                          <span
-                            className={`inline-flex max-w-full items-center gap-1.5 truncate rounded-full border px-2.5 py-1 text-xs font-semibold ${badge.cls}`}
-                            title={badge.label}
+                            className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold ${badge.cls}`}
                           >
                             {badge.label}
                           </span>
-                        </td>
-                        <td className="px-3 py-3">
+                        </div>
+
+                        <div className="mt-3 font-bold text-ink">
+                          {l.first_name} {l.last_name}
+                        </div>
+                        <div className="mono text-[12px] text-charcoal-soft">{l.phone}</div>
+
+                        <div className="mt-2 text-[13px] text-charcoal">
+                          {l.case_type}{" "}
+                          <span className="text-charcoal-soft">
+                            · Accident {formatDate(l.accident_date)}
+                          </span>
+                        </div>
+
+                        <div className="mt-3 border-t border-line-soft pt-3">
                           {l.agent_review ? (
-                            <>
-                              <div
-                                className="flex items-center gap-1 truncate text-xs font-medium text-charcoal"
-                                title={l.agent_review.agent_message ?? ""}
-                              >
-                                <Check className="h-3 w-3 shrink-0 text-green-deep" />
-                                <span className="truncate">
-                                  <span className="font-bold text-green-deep">
-                                    {l.agent_review.call_status}:
-                                  </span>{" "}
-                                  &quot;{l.agent_review.agent_message}&quot;
+                            <div className="flex items-start gap-1.5 text-xs text-charcoal">
+                              <Check className="mt-0.5 h-3 w-3 shrink-0 text-green-deep" />
+                              <span>
+                                <span className="font-bold text-green-deep">
+                                  {l.agent_review.call_status}:
+                                </span>{" "}
+                                &quot;{l.agent_review.agent_message}&quot;
+                                <span className="mt-0.5 block text-[10px] text-charcoal-soft">
+                                  {l.agent_review.agent_name} ·{" "}
+                                  {l.agent_review.call_duration ?? "N/A"}
                                 </span>
-                              </div>
-                              <div className="mt-0.5 truncate text-[10px] text-charcoal-soft">
-                                {l.agent_review.agent_name} · {l.agent_review.call_duration ?? "N/A"}
-                              </div>
-                            </>
+                              </span>
+                            </div>
                           ) : (
                             <span className="flex items-center gap-1 text-xs text-blue italic">
                               <PhoneCall className="h-3 w-3" /> Awaiting Agent Call
                             </span>
                           )}
-                        </td>
-                        <td className="px-3 py-3">
-                          {l.firm_action ? (
-                            <>
-                              <span
-                                className={`inline-flex items-center rounded px-2 py-0.5 text-[11px] font-semibold ${
-                                  l.firm_action.status === "Retained"
-                                    ? "bg-blue-light text-blue"
-                                    : "bg-paper-2 text-charcoal-soft"
-                                }`}
-                              >
-                                {FIRM_STATUS_LABEL[l.firm_action.status] ?? l.firm_action.status}
-                              </span>
-                              <div className="mt-0.5 truncate text-[10px] text-charcoal-soft">
-                                {l.firm_action.assigned_attorney_name ?? "Unassigned"}
-                              </div>
-                            </>
-                          ) : (
-                            <span className="text-[11px] text-charcoal-soft">New / Unassigned</span>
-                          )}
-                        </td>
-                        <td className="px-3 py-3 text-right">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openModal(l);
-                            }}
-                            className="inline-flex items-center gap-1 rounded-[9px] bg-blue-light px-2.5 py-1.5 text-xs font-semibold text-blue whitespace-nowrap transition hover:bg-blue hover:text-white"
-                          >
+                        </div>
+
+                        <div className="mt-3 flex items-center justify-between gap-3 border-t border-line-soft pt-3">
+                          <div>
+                            {l.firm_action ? (
+                              <>
+                                <span
+                                  className={`inline-flex items-center rounded px-2 py-0.5 text-[11px] font-semibold ${
+                                    l.firm_action.status === "Retained"
+                                      ? "bg-blue-light text-blue"
+                                      : "bg-paper-2 text-charcoal-soft"
+                                  }`}
+                                >
+                                  {FIRM_STATUS_LABEL[l.firm_action.status] ?? l.firm_action.status}
+                                </span>
+                                <div className="mt-0.5 text-[10px] text-charcoal-soft">
+                                  {l.firm_action.assigned_attorney_name ?? "Unassigned"}
+                                </div>
+                              </>
+                            ) : (
+                              <span className="text-[11px] text-charcoal-soft">New / Unassigned</span>
+                            )}
+                          </div>
+                          <span className="inline-flex shrink-0 items-center gap-1 rounded-[9px] bg-blue-light px-2.5 py-1.5 text-xs font-semibold text-blue">
                             <Eye className="h-3.5 w-3.5" /> Inspect
-                          </button>
-                        </td>
-                      </tr>
+                          </span>
+                        </div>
+                      </button>
                     );
                   })
                 )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+              </div>
+
+              {/* Desktop: full table. table-fixed + explicit column widths keep all
+                  seven columns inside the card at lg/xl widths instead of letting
+                  wide content (the post-call quote) push Action off-screen. */}
+              <div className="hidden lg:block">
+                <table className="w-full table-fixed border-collapse text-left text-sm">
+                  <thead>
+                    <tr className="border-b border-line-soft bg-paper-2 text-[11px] font-bold tracking-wider text-charcoal-soft uppercase">
+                      <th className="w-[15%] px-3 py-3">Lead ID / Date</th>
+                      <th className="w-[12%] px-3 py-3">Claimant Details</th>
+                      <th className="w-[10%] px-3 py-3">Case & Accident</th>
+                      <th className="w-[16%] px-3 py-3">Agent Verification</th>
+                      <th className="w-[18%] px-3 py-3">Post-Call Message</th>
+                      <th className="w-[18%] px-3 py-3">Firm Status</th>
+                      <th className="w-[11%] px-3 py-3 text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-line-soft">
+                    {loading ? (
+                      <tr>
+                        <td colSpan={7} className="py-8 text-center text-charcoal-soft">
+                          Loading...
+                        </td>
+                      </tr>
+                    ) : filtered.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} className="py-8 text-center text-charcoal-soft">
+                          No case records match your current filters.
+                        </td>
+                      </tr>
+                    ) : (
+                      filtered.map((l) => {
+                        const badge = STATUS_BADGE[l.status] ?? {
+                          label: l.status,
+                          cls: "bg-paper-2 text-charcoal-soft border-line",
+                        };
+                        return (
+                          <tr
+                            key={l.id}
+                            onClick={() => openModal(l)}
+                            className="cursor-pointer transition hover:bg-paper-2/80"
+                          >
+                            <td className="px-3 py-3">
+                              <span
+                                className="mono block truncate font-bold text-ink"
+                                title={l.case_number ?? l.id.slice(0, 8)}
+                              >
+                                {l.case_number ?? l.id.slice(0, 8)}
+                              </span>
+                              <span className="text-[11px] whitespace-nowrap text-charcoal-soft">
+                                {formatDate(l.created_at)}
+                              </span>
+                            </td>
+                            <td className="px-3 py-3">
+                              <div className="truncate font-bold text-ink">
+                                {l.first_name} {l.last_name}
+                              </div>
+                              <div className="mono truncate text-[11px] text-charcoal-soft">
+                                {l.phone}
+                              </div>
+                            </td>
+                            <td className="px-3 py-3">
+                              <div className="truncate font-medium text-charcoal">{l.case_type}</div>
+                              <div className="text-[11px] whitespace-nowrap text-charcoal-soft">
+                                Accident: {formatDate(l.accident_date)}
+                              </div>
+                            </td>
+                            <td className="px-3 py-3">
+                              <span
+                                className={`inline-flex max-w-full items-center gap-1.5 truncate rounded-full border px-2.5 py-1 text-xs font-semibold ${badge.cls}`}
+                                title={badge.label}
+                              >
+                                {badge.label}
+                              </span>
+                            </td>
+                            <td className="px-3 py-3">
+                              {l.agent_review ? (
+                                <>
+                                  <div
+                                    className="flex items-center gap-1 truncate text-xs font-medium text-charcoal"
+                                    title={l.agent_review.agent_message ?? ""}
+                                  >
+                                    <Check className="h-3 w-3 shrink-0 text-green-deep" />
+                                    <span className="truncate">
+                                      <span className="font-bold text-green-deep">
+                                        {l.agent_review.call_status}:
+                                      </span>{" "}
+                                      &quot;{l.agent_review.agent_message}&quot;
+                                    </span>
+                                  </div>
+                                  <div className="mt-0.5 truncate text-[10px] text-charcoal-soft">
+                                    {l.agent_review.agent_name} · {l.agent_review.call_duration ?? "N/A"}
+                                  </div>
+                                </>
+                              ) : (
+                                <span className="flex items-center gap-1 text-xs text-blue italic">
+                                  <PhoneCall className="h-3 w-3" /> Awaiting Agent Call
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-3 py-3">
+                              {l.firm_action ? (
+                                <>
+                                  <span
+                                    className={`inline-flex items-center rounded px-2 py-0.5 text-[11px] font-semibold ${
+                                      l.firm_action.status === "Retained"
+                                        ? "bg-blue-light text-blue"
+                                        : "bg-paper-2 text-charcoal-soft"
+                                    }`}
+                                  >
+                                    {FIRM_STATUS_LABEL[l.firm_action.status] ?? l.firm_action.status}
+                                  </span>
+                                  <div className="mt-0.5 truncate text-[10px] text-charcoal-soft">
+                                    {l.firm_action.assigned_attorney_name ?? "Unassigned"}
+                                  </div>
+                                </>
+                              ) : (
+                                <span className="text-[11px] text-charcoal-soft">New / Unassigned</span>
+                              )}
+                            </td>
+                            <td className="px-3 py-3 text-right">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openModal(l);
+                                }}
+                                className="inline-flex items-center gap-1 rounded-[9px] bg-blue-light px-2.5 py-1.5 text-xs font-semibold text-blue whitespace-nowrap transition hover:bg-blue hover:text-white"
+                              >
+                                <Eye className="h-3.5 w-3.5" /> Inspect
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
+        )}
       </main>
 
       {modalLead && (
@@ -823,6 +895,18 @@ export default function AttorneyDashboard({ staff }: { staff: StaffProfile }) {
                     <div>
                       <span className="font-medium text-charcoal-soft">Police Responded:</span>{" "}
                       <strong className="text-ink">{modalLead.police_arrived || "N/A"}</strong>
+                    </div>
+                    <div>
+                      <span className="font-medium text-charcoal-soft">Insurance Contacted Claimant:</span>{" "}
+                      <strong className="text-ink">{modalLead.insurance_contacted || "N/A"}</strong>
+                    </div>
+                    <div>
+                      <span className="font-medium text-charcoal-soft">Medical Treatment:</span>{" "}
+                      <strong className="text-ink">{modalLead.medical_treatment || "N/A"}</strong>
+                    </div>
+                    <div>
+                      <span className="font-medium text-charcoal-soft">Missed Work:</span>{" "}
+                      <strong className="text-ink">{modalLead.missed_work || "N/A"}</strong>
                     </div>
                   </div>
                   <div>

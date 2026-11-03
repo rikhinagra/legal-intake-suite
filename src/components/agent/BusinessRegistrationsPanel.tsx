@@ -75,7 +75,7 @@ function Detail({ label, value, mono }: { label: string; value: string | number 
   return (
     <div>
       <div className="text-xs font-medium text-charcoal-soft">{label}</div>
-      <div className={`mt-0.5 break-words text-charcoal ${mono ? "mono" : ""}`}>{text}</div>
+      <div className={`mt-0.5 [overflow-wrap:anywhere] text-charcoal ${mono ? "mono" : ""}`}>{text}</div>
     </div>
   );
 }
@@ -318,7 +318,7 @@ export default function BusinessRegistrationsPanel({ onChanged }: { onChanged?: 
                 <div className="space-y-3.5 text-[14.5px]">
                   <div>
                     <div className="text-xs font-medium text-charcoal-soft">Company</div>
-                    <div className="text-base font-semibold text-ink">{detail.company_name}</div>
+                    <div className="text-base font-semibold [overflow-wrap:anywhere] text-ink">{detail.company_name}</div>
                   </div>
                   <div className="grid grid-cols-2 gap-3 pt-2">
                     <Detail label="Contact Person" value={detail.contact_name} />

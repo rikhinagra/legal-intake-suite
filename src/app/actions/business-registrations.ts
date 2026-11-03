@@ -147,3 +147,148 @@ export async function saveBusinessAgentReview(
 
   return { ok: true };
 }
+
+// ============================================================
+// Attorney side
+// ============================================================
+
+export type BusinessDecision = "under_review" | "approved" | "declined";
+
+const ATTORNEY_DECISIONS: BusinessDecision[] = ["under_review", "approved", "declined"];
+const MAX_DECISION_NOTES = 5000;
+
+export interface BusinessAttorneyDecision {
+  decision: BusinessDecision;
+  notes: string | null;
+  decided_by_name: string | null;
+  updated_at: string;
+}
+
+export interface DashboardBusinessRegistration extends BusinessRegistrationDetail {
+  attorney_decision: BusinessAttorneyDecision | null;
+}
+
+type RawRow = Record<string, unknown>;
+
+function firstOrNull<T>(value: T | T[] | null | undefined): T | null {
+  if (!value) return null;
+  return Array.isArray(value) ? (value[0] ?? null) : value;
+}
+
+export async function getDashboardBusinessRegistrations(): Promise<
+  DashboardBusinessRegistration[]
+> {
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase
+    .from("business_registrations")
+    .select(
+      `*,
+      profiles(full_name),
+      business_attorney_decisions(decision, notes, updated_at, profiles(full_name))`
+    )
+    .order("created_at", { ascending: false });
+
+  if (error) throw new Error(error.message);
+
+  return (data ?? []).map((row: RawRow) => {
+    const { profiles, business_attorney_decisions, agent_id: _agentId, ...registration } = row;
+    void _agentId;
+    const agent = firstOrNull(profiles as RawRow | RawRow[] | null);
+    const decision = firstOrNull(business_attorney_decisions as RawRow | RawRow[] | null);
+
+    return {
+      ...(registration as unknown as Omit<BusinessRegistrationDetail, "agent_name">),
+      agent_name: (agent?.full_name as string | undefined) ?? null,
+      attorney_decision: decision
+        ? {
+            decision: decision.decision as BusinessDecision,
+            notes: decision.notes as string | null,
+            decided_by_name:
+              (firstOrNull(decision.profiles as RawRow | RawRow[] | null)?.full_name as
+                | string
+                | undefined) ?? null,
+            updated_at: decision.updated_at as string,
+          }
+        : null,
+    };
+  });
+}
+
+// Registrations the agent has passed on that the attorney has not decided yet.
+export async function getAwaitingDecisionCount(): Promise<number> {
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase
+    .from("business_registrations")
+    .select("id, business_attorney_decisions(decision)")
+    .eq("status", "ready_for_attorney");
+
+  if (error) throw new Error(error.message);
+
+  return (data ?? []).filter((row: RawRow) => {
+    const decision = firstOrNull(row.business_attorney_decisions as RawRow | RawRow[] | null);
+    return !decision || decision.decision === "under_review";
+  }).length;
+}
+
+export interface SaveBusinessAttorneyDecisionInput {
+  registrationId: string;
+  decision: BusinessDecision;
+  notes: string;
+}
+
+export type SaveBusinessAttorneyDecisionResult = { ok: true } | { ok: false; error: string };
+
+export async function saveBusinessAttorneyDecision(
+  input: SaveBusinessAttorneyDecisionInput
+): Promise<SaveBusinessAttorneyDecisionResult> {
+  const notes = input.notes.trim();
+
+  // The form checks this too, but a server action can be called directly.
+  if (!ATTORNEY_DECISIONS.includes(input.decision)) {
+    return { ok: false, error: "Choose a valid decision." };
+  }
+  if (notes.length > MAX_DECISION_NOTES) {
+    return { ok: false, error: "Notes are too long (up to 5000 characters)." };
+  }
+
+  const supabase = await createServerSupabaseClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Not signed in." };
+
+  // An attorney can only decide on a registration the agent has passed on.
+  const { data: registration, error: lookupError } = await supabase
+    .from("business_registrations")
+    .select("status")
+    .eq("id", input.registrationId)
+    .maybeSingle();
+  if (lookupError) return { ok: false, error: lookupError.message };
+  if (!registration) return { ok: false, error: "Registration not found." };
+  if (registration.status !== "ready_for_attorney") {
+    return { ok: false, error: "The agent has not passed this registration to the attorney yet." };
+  }
+
+  // `.select()` so a save blocked by the database rules (for example for an
+  // agent account) is reported instead of silently doing nothing.
+  const { data, error } = await supabase
+    .from("business_attorney_decisions")
+    .upsert(
+      {
+        registration_id: input.registrationId,
+        decision: input.decision,
+        notes: notes || null,
+        decided_by: user.id,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "registration_id" }
+    )
+    .select("id");
+
+  if (error) return { ok: false, error: error.message };
+  if (!data || data.length === 0) {
+    return { ok: false, error: "Could not save. You may not have permission to decide." };
+  }
+
+  return { ok: true };
+}
