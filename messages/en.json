@@ -34,7 +34,9 @@
     "notProvided": "Not provided",
     "yes": "Yes",
     "no": "No",
-    "caseNoPrefix": "CASE NO."
+    "caseNoPrefix": "CASE NO.",
+    "connectionError": "We could not reach the server.",
+    "tryAgain": "Please try again."
   },
   "stepCase": {
     "title": "About your case",

@@ -34,7 +34,9 @@
     "notProvided": "No proporcionado",
     "yes": "Sí",
     "no": "No",
-    "caseNoPrefix": "CASO NO."
+    "caseNoPrefix": "CASO NO.",
+    "connectionError": "No pudimos conectar con el servidor.",
+    "tryAgain": "Por favor intenta de nuevo."
   },
   "stepCase": {
     "title": "Sobre tu caso",

@@ -65,6 +65,9 @@ export default function IntakeWizard({ variant = "page" }: { variant?: "page" | 
   const [attachments, setAttachments] = useState<PendingAttachment[]>([]);
   const [uploadWarning, setUploadWarning] = useState<string | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
+  // Blocks a second submit in the very same moment (a fast double tap), which
+  // the `submitting` state alone cannot, since it only updates after a render.
+  const submittingRef = useRef(false);
 
   const update = (patch: Partial<IntakeFormData>) =>
     setData((prev) => ({ ...prev, ...patch }));
@@ -183,15 +186,25 @@ export default function IntakeWizard({ variant = "page" }: { variant?: "page" | 
   }
 
   async function submitCase() {
+    if (submittingRef.current) return;
+    submittingRef.current = true;
     const num = caseNumber ?? assignCaseNumber(t("caseNoPrefix"));
     if (!caseNumber) setCaseNumber(num);
 
     setSubmitting(true);
     setSubmitError(null);
     setUploadWarning(null);
-    const result = await submitLead(data, num);
+    // A dropped connection makes the call throw rather than return an error,
+    // so it is caught here or the button would stay on "Submitting..." forever.
+    let result: Awaited<ReturnType<typeof submitLead>>;
+    try {
+      result = await submitLead(data, num);
+    } catch {
+      result = { ok: false, error: t("connectionError") };
+    }
 
     if (!result.ok) {
+      submittingRef.current = false;
       setSubmitting(false);
       setSubmitError(result.error);
       return;
@@ -202,15 +215,23 @@ export default function IntakeWizard({ variant = "page" }: { variant?: "page" | 
     trackLeadOnce(result.leadId);
 
     if (attachments.length > 0) {
-      const uploadResults = await Promise.all(
-        attachments.map((a) => uploadLeadFilePublic(result.leadId, a.file, a.type))
-      );
-      const failedCount = uploadResults.filter((r) => !r.ok).length;
+      // The case itself is already saved, so a failed upload only warns. If the
+      // connection drops mid upload, every file counts as not uploaded.
+      let failedCount = attachments.length;
+      try {
+        const uploadResults = await Promise.all(
+          attachments.map((a) => uploadLeadFilePublic(result.leadId, a.file, a.type))
+        );
+        failedCount = uploadResults.filter((r) => !r.ok).length;
+      } catch {
+        // keep failedCount as every file
+      }
       if (failedCount > 0) {
         setUploadWarning(tReview("uploadPartialError", { count: failedCount }));
       }
     }
 
+    submittingRef.current = false;
     setSubmitting(false);
     setSubmitted(true);
     try {
@@ -277,7 +298,7 @@ export default function IntakeWizard({ variant = "page" }: { variant?: "page" | 
 
           {submitError && (
             <p className="mt-4 rounded-[9px] border border-rose-200 bg-rose-50 px-4 py-3 text-[13px] text-rose-700">
-              {submitError} Please try again.
+              {submitError} {t("tryAgain")}
             </p>
           )}
 

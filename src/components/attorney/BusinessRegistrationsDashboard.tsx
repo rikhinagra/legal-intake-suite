@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Inbox,
   Hourglass,
@@ -118,6 +118,9 @@ export default function BusinessRegistrationsDashboard({
   const [notes, setNotes] = useState("");
   const [savedSnapshot, setSavedSnapshot] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  // Blocks a second save in the very same moment, which the `saving` state
+  // alone cannot, since it only updates after a render.
+  const savingRef = useRef(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [showSavedBanner, setShowSavedBanner] = useState(false);
 
@@ -197,28 +200,35 @@ export default function BusinessRegistrationsDashboard({
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
-    if (!modalReg || saving) return;
+    if (!modalReg || savingRef.current) return;
+    savingRef.current = true;
     setSaving(true);
     setSaveError(null);
     // Restarts the banner's timer, so a banner from an earlier save cannot
     // expire in the middle of this one.
     setShowSavedBanner(false);
-    const result = await saveBusinessAttorneyDecision({
-      registrationId: modalReg.id,
-      decision,
-      notes,
-    });
-    if (!result.ok) {
+    try {
+      const result = await saveBusinessAttorneyDecision({
+        registrationId: modalReg.id,
+        decision,
+        notes,
+      });
+      if (!result.ok) {
+        setSaveError(result.error);
+        return;
+      }
+      const refreshed = await getDashboardBusinessRegistrations();
+      setRegistrations(refreshed);
+      setSavedSnapshot(decisionSnapshot({ decision, notes }));
+      setShowSavedBanner(true);
+      onChanged?.();
+    } catch {
+      // A dropped connection makes the call throw instead of returning an error.
+      setSaveError("Could not reach the server. Please check your connection and try again.");
+    } finally {
+      savingRef.current = false;
       setSaving(false);
-      setSaveError(result.error);
-      return;
     }
-    const refreshed = await getDashboardBusinessRegistrations();
-    setRegistrations(refreshed);
-    setSavedSnapshot(decisionSnapshot({ decision, notes }));
-    setSaving(false);
-    setShowSavedBanner(true);
-    onChanged?.();
   }
 
   function exportCSV() {

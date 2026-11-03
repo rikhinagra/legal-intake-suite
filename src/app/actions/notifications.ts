@@ -1,4 +1,4 @@
-"use server";
+import "server-only";
 
 import { render } from "@react-email/render";
 import { createAdminClient } from "@/lib/supabase/admin-client";
@@ -14,6 +14,10 @@ import FirmStatusUpdateEmail, {
 import SubmissionReceivedEmail from "@/emails/SubmissionReceivedEmail";
 
 /**
+ * This is deliberately NOT a "use server" file: functions exported from one
+ * can be called straight from a browser, and these send email from our own
+ * domain, so they must only ever run from our own server code.
+ *
  * Every function here is deliberately best-effort: notification failures
  * (e.g. Resend sandbox mode blocking a recipient with no verified domain)
  * must never break the underlying action that triggered them — a lead must

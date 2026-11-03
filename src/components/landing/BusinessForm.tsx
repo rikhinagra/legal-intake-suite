@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { submitBusinessRegistration } from "@/app/actions/submit-business-registration";
@@ -61,6 +61,9 @@ export default function BusinessForm() {
   const [showMore, setShowMore] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  // Blocks a second submit in the very same moment (a fast double tap), which
+  // the `submitting` state alone cannot, since it only updates after a render.
+  const submittingRef = useRef(false);
   const [submitError, setSubmitError] = useState(false);
   const [registrationNumber, setRegistrationNumber] = useState<string | null>(null);
 
@@ -98,7 +101,7 @@ export default function BusinessForm() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (submitting) return;
+    if (submittingRef.current) return;
     const next = new Set<string>();
     if (!data.company.trim()) next.add("company");
     if (!data.contact.trim()) next.add("contact");
@@ -110,27 +113,36 @@ export default function BusinessForm() {
     setInvalid(next);
     if (next.size > 0) return;
 
+    submittingRef.current = true;
     setSubmitting(true);
     setSubmitError(false);
-    const result = await submitBusinessRegistration({
-      company: data.company,
-      contact: data.contact,
-      phone: data.phone,
-      email: data.email,
-      fleet: data.fleet,
-      need: data.need,
-      companyType: data.companyType,
-      role: data.role,
-      dot: data.dot,
-      drivers: data.drivers,
-      states: data.states,
-      carrier: data.carrier,
-      counsel: data.counsel,
-      method: data.method,
-      message: data.message,
-      consent: data.consent,
-      language: locale === "es" ? "Spanish" : "English",
-    });
+    // A dropped connection makes the call throw rather than return an error,
+    // so it is caught here or the button would stay on "Sending..." forever.
+    let result: Awaited<ReturnType<typeof submitBusinessRegistration>>;
+    try {
+      result = await submitBusinessRegistration({
+        company: data.company,
+        contact: data.contact,
+        phone: data.phone,
+        email: data.email,
+        fleet: data.fleet,
+        need: data.need,
+        companyType: data.companyType,
+        role: data.role,
+        dot: data.dot,
+        drivers: data.drivers,
+        states: data.states,
+        carrier: data.carrier,
+        counsel: data.counsel,
+        method: data.method,
+        message: data.message,
+        consent: data.consent,
+        language: locale === "es" ? "Spanish" : "English",
+      });
+    } catch {
+      result = { ok: false, error: "" };
+    }
+    submittingRef.current = false;
     setSubmitting(false);
 
     if (!result.ok) {
