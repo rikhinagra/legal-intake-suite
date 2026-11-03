@@ -268,6 +268,138 @@
       "submitting": "Sending...",
       "successTitle": "Request received",
       "successMessage": "Thank you. Your business registration is received. Our team will contact you within 24 hours to confirm."
+    },
+    "sections": {
+      "servicesTitleAccident": "How we help after an accident",
+      "servicesTitleBusiness": "How we help your business",
+      "servicesAccident": [
+        {
+          "title": "Fast response",
+          "text": "A real person reviews your case and contacts you within 24 hours, so evidence and next steps are handled early."
+        },
+        {
+          "title": "Support for injured people and families",
+          "text": "For car, motorcycle, rideshare and pedestrian accidents, serious injuries and wrongful death. You deal with recovery, we deal with the paperwork."
+        },
+        {
+          "title": "Insurance and legal guidance",
+          "text": "Licensed attorney oversight on claims and documents, plus support for transport companies and fleets after an incident."
+        }
+      ],
+      "servicesBusiness": [
+        {
+          "title": "Free registration",
+          "text": "Register once at no cost. When your business has an accident case in the future, we handle it free."
+        },
+        {
+          "title": "Fast response",
+          "text": "A real person reviews your registration and contacts you within 24 hours, so you know who to call when it matters."
+        },
+        {
+          "title": "Support for fleets and drivers",
+          "text": "Licensed attorney oversight on claims and documents, plus support for transport companies, fleets and their drivers after an incident."
+        }
+      ],
+      "stats": [
+        {
+          "value": "3+ years",
+          "label": "supporting personal injury firms"
+        },
+        {
+          "value": "2,000+",
+          "label": "cases processed every year"
+        },
+        {
+          "value": "Attorney",
+          "label": "oversight on every team"
+        },
+        {
+          "value": "24 hrs",
+          "label": "response time"
+        }
+      ],
+      "howTitle": "How it works",
+      "howAccident": [
+        {
+          "title": "Share your story",
+          "text": "Fill out the form in a few minutes. It is free and confidential."
+        },
+        {
+          "title": "We review your case",
+          "text": "A real attorney or case manager reviews it and calls you within 24 hours."
+        },
+        {
+          "title": "You decide",
+          "text": "No pressure. If we take your case, you pay nothing unless we win."
+        }
+      ],
+      "howBusiness": [
+        {
+          "title": "Register your business",
+          "text": "Fill out the short form in a few minutes. It is free and confidential."
+        },
+        {
+          "title": "We get to know your fleet",
+          "text": "A real person reviews your registration and calls you within 24 hours."
+        },
+        {
+          "title": "You are covered when it matters",
+          "text": "If your business has an accident case, we handle it at no cost to you."
+        }
+      ],
+      "attorneyTitle": "Who reviews your case",
+      "attorneyHeading": "Licensed attorney oversight",
+      "attorneyText1": "Every case team includes licensed attorneys who review critical documents and make sure local rules and ethical requirements are followed.",
+      "attorneyText2": "Your information is encrypted and handled only by team members who have signed NDAs.",
+      "faqTitle": "Common questions",
+      "faqAccident": [
+        {
+          "q": "Is this really free?",
+          "a": "Yes. The case review costs nothing. If we take your case, we are paid only if you win, as a percentage of the recovery."
+        },
+        {
+          "q": "What happens after I submit my case?",
+          "a": "A real attorney or case manager reviews it and calls you within 24 hours. There is no pressure, and you decide what to do next."
+        },
+        {
+          "q": "What types of accidents do you help with?",
+          "a": "Car, truck and transport, motorcycle, rideshare, pedestrian, wrongful death, slip and fall, and dog bite cases."
+        },
+        {
+          "q": "Who sees my information?",
+          "a": "Only our team. It is encrypted, never sold, and never shared with third parties without your permission."
+        },
+        {
+          "q": "What if I already talked to the insurance company?",
+          "a": "That is okay. Do not sign anything or give a recorded statement until you have spoken with us."
+        }
+      ],
+      "faqBusiness": [
+        {
+          "q": "Is business registration really free?",
+          "a": "Yes. Transport companies, fleets and other businesses can register at no cost. When your business has a case in the future, we handle it free."
+        },
+        {
+          "q": "Which businesses can register?",
+          "a": "Trucking carriers, freight brokers, logistics companies, towing, school and passenger buses, rideshare and delivery fleets, medical transport and other businesses with vehicles or drivers."
+        },
+        {
+          "q": "Can a small business with only a few vehicles register?",
+          "a": "Yes. The registration form has fleet sizes from 1 to 5 vehicles up to 100 or more, so businesses of any size can register."
+        },
+        {
+          "q": "What happens after I register?",
+          "a": "A real person reviews your registration and calls you within 24 hours to get to know your business."
+        },
+        {
+          "q": "Who sees my information?",
+          "a": "Only our team. It is encrypted, never sold, and never shared with third parties without your permission."
+        }
+      ],
+      "disclaimer": "Attorney advertising. Prior results do not guarantee a similar outcome. Submitting this form does not create an attorney and client relationship.",
+      "copyright": "© 2026 LexGo Solutions.",
+      "privacy": "Privacy Policy",
+      "emailUs": "Email us"
     }
   }
 }

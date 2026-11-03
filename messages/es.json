@@ -268,6 +268,138 @@
       "submitting": "Enviando...",
       "successTitle": "Solicitud recibida",
       "successMessage": "Gracias. Recibimos el registro de tu negocio. Nuestro equipo te contactará en 24 horas para confirmar."
+    },
+    "sections": {
+      "servicesTitleAccident": "Cómo te ayudamos después de un accidente",
+      "servicesTitleBusiness": "Cómo ayudamos a tu negocio",
+      "servicesAccident": [
+        {
+          "title": "Respuesta rápida",
+          "text": "Una persona real revisa tu caso y te contacta en 24 horas, para que la evidencia y los siguientes pasos se atiendan a tiempo."
+        },
+        {
+          "title": "Apoyo para personas lesionadas y sus familias",
+          "text": "Para accidentes de auto, motocicleta, viajes compartidos y peatones, lesiones graves y muerte por negligencia. Tú te ocupas de recuperarte, nosotros del papeleo."
+        },
+        {
+          "title": "Orientación legal y con aseguradoras",
+          "text": "Supervisión de abogados con licencia en reclamos y documentos, además de apoyo para empresas de transporte y flotas después de un incidente."
+        }
+      ],
+      "servicesBusiness": [
+        {
+          "title": "Registro gratuito",
+          "text": "Regístrate una sola vez, sin costo. Cuando tu negocio tenga un caso de accidente en el futuro, lo atendemos gratis."
+        },
+        {
+          "title": "Respuesta rápida",
+          "text": "Una persona real revisa tu registro y te contacta en 24 horas, para que sepas a quién llamar cuando importe."
+        },
+        {
+          "title": "Apoyo para flotas y conductores",
+          "text": "Supervisión de abogados con licencia en reclamos y documentos, además de apoyo para empresas de transporte, flotas y sus conductores después de un incidente."
+        }
+      ],
+      "stats": [
+        {
+          "value": "3+ años",
+          "label": "apoyando a firmas de lesiones personales"
+        },
+        {
+          "value": "2,000+",
+          "label": "casos procesados cada año"
+        },
+        {
+          "value": "Abogados",
+          "label": "supervisan cada equipo"
+        },
+        {
+          "value": "24 horas",
+          "label": "tiempo de respuesta"
+        }
+      ],
+      "howTitle": "Cómo funciona",
+      "howAccident": [
+        {
+          "title": "Cuéntanos tu historia",
+          "text": "Llena el formulario en pocos minutos. Es gratis y confidencial."
+        },
+        {
+          "title": "Revisamos tu caso",
+          "text": "Un abogado o gestor de casos real lo revisa y te llama en 24 horas."
+        },
+        {
+          "title": "Tú decides",
+          "text": "Sin presión. Si aceptamos tu caso, no pagas nada a menos que ganemos."
+        }
+      ],
+      "howBusiness": [
+        {
+          "title": "Registra tu negocio",
+          "text": "Llena el formulario corto en pocos minutos. Es gratis y confidencial."
+        },
+        {
+          "title": "Conocemos tu flota",
+          "text": "Una persona real revisa tu registro y te llama en 24 horas."
+        },
+        {
+          "title": "Estás cubierto cuando importa",
+          "text": "Si tu negocio tiene un caso de accidente, lo atendemos sin costo para ti."
+        }
+      ],
+      "attorneyTitle": "Quién revisa tu caso",
+      "attorneyHeading": "Supervisión de abogados con licencia",
+      "attorneyText1": "Cada equipo de casos incluye abogados con licencia que revisan los documentos importantes y se aseguran de cumplir las normas locales y los requisitos éticos.",
+      "attorneyText2": "Tu información está cifrada y solo la maneja el personal que firmó acuerdos de confidencialidad.",
+      "faqTitle": "Preguntas frecuentes",
+      "faqAccident": [
+        {
+          "q": "¿Es realmente gratis?",
+          "a": "Sí. La revisión del caso no cuesta nada. Si aceptamos tu caso, solo cobramos si ganas, como un porcentaje de la recuperación."
+        },
+        {
+          "q": "¿Qué pasa después de enviar mi caso?",
+          "a": "Un abogado o gestor de casos real lo revisa y te llama en 24 horas. No hay presión, y tú decides qué hacer después."
+        },
+        {
+          "q": "¿Con qué tipos de accidentes ayudan?",
+          "a": "Casos de auto, camión y transporte, motocicleta, viajes compartidos, peatones, muerte por negligencia, caídas y resbalones, y mordeduras de perro."
+        },
+        {
+          "q": "¿Quién ve mi información?",
+          "a": "Solo nuestro equipo. Está cifrada, nunca se vende y nunca se comparte con terceros sin tu permiso."
+        },
+        {
+          "q": "¿Qué pasa si ya hablé con la aseguradora?",
+          "a": "No hay problema. No firmes nada ni des una declaración grabada hasta que hables con nosotros."
+        }
+      ],
+      "faqBusiness": [
+        {
+          "q": "¿El registro de negocios es realmente gratis?",
+          "a": "Sí. Las empresas de transporte, flotas y otros negocios pueden registrarse sin costo. Cuando tu negocio tenga un caso en el futuro, lo atendemos gratis."
+        },
+        {
+          "q": "¿Qué negocios pueden registrarse?",
+          "a": "Transportistas de carga, corredores de carga, empresas de logística, grúas, autobuses escolares y de pasajeros, flotas de viajes compartidos y reparto, transporte médico y otros negocios con vehículos o conductores."
+        },
+        {
+          "q": "¿Puede registrarse un negocio pequeño con pocos vehículos?",
+          "a": "Sí. El formulario de registro tiene tamaños de flota desde 1 a 5 vehículos hasta 100 o más, así que negocios de cualquier tamaño pueden registrarse."
+        },
+        {
+          "q": "¿Qué pasa después de registrarme?",
+          "a": "Una persona real revisa tu registro y te llama en 24 horas para conocer tu negocio."
+        },
+        {
+          "q": "¿Quién ve mi información?",
+          "a": "Solo nuestro equipo. Está cifrada, nunca se vende y nunca se comparte con terceros sin tu permiso."
+        }
+      ],
+      "disclaimer": "Publicidad de abogados. Los resultados anteriores no garantizan un resultado similar. Enviar este formulario no crea una relación entre abogado y cliente.",
+      "copyright": "© 2026 LexGo Solutions.",
+      "privacy": "Política de privacidad",
+      "emailUs": "Escríbenos"
     }
   }
 }

@@ -1,21 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { ShieldCheck, Clock, Lock, Languages } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import IntakeWizard from "@/components/wizard/IntakeWizard";
 import HeroBackground from "./HeroBackground";
 import BusinessForm from "./BusinessForm";
-
-type Tab = "accident" | "business";
-
-const DEFAULT_TAB: Tab = "business";
-const TAB_STORAGE_KEY = "claim-intake:landing-tab";
-
-function isTab(value: string | null): value is Tab {
-  return value === "accident" || value === "business";
-}
+import { useLandingTab, type LandingTab } from "./LandingTabProvider";
 
 export default function LandingHero() {
   const t = useTranslations("landing");
@@ -23,36 +14,7 @@ export default function LandingHero() {
   const locale = useLocale();
   const pathname = usePathname();
   const router = useRouter();
-  const [tab, setTab] = useState<Tab>(DEFAULT_TAB);
-
-  // The tab choice is read from the URL (?tab=) first, then from the last
-  // choice in this browser session. It is read here, after mount, instead
-  // of with useSearchParams, which would force this whole hero to render
-  // on the client only.
-  /* eslint-disable react-hooks/set-state-in-effect */
-  useEffect(() => {
-    try {
-      const fromUrl = new URLSearchParams(window.location.search).get("tab");
-      if (isTab(fromUrl)) {
-        setTab(fromUrl);
-        return;
-      }
-      const saved = sessionStorage.getItem(TAB_STORAGE_KEY);
-      if (isTab(saved)) setTab(saved);
-    } catch {
-      // storage or URL access unavailable: keep the default tab
-    }
-  }, []);
-  /* eslint-enable react-hooks/set-state-in-effect */
-
-  function chooseTab(next: Tab) {
-    setTab(next);
-    try {
-      sessionStorage.setItem(TAB_STORAGE_KEY, next);
-    } catch {
-      // the choice just won't be remembered
-    }
-  }
+  const { tab, chooseTab } = useLandingTab();
 
   const toggleLanguage = () => {
     const nextLocale = locale === "en" ? "es" : "en";
@@ -61,7 +23,7 @@ export default function LandingHero() {
 
   const chips = t.raw(tab === "accident" ? "hero.chipsAccident" : "hero.chipsBusiness") as string[];
 
-  const tabs: { id: Tab; label: string }[] = [
+  const tabs: { id: LandingTab; label: string }[] = [
     { id: "accident", label: t("tabs.accident") },
     { id: "business", label: t("tabs.business") },
   ];

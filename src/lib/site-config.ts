@@ -19,6 +19,12 @@ export const SITE_TITLE = "Free Confidential Case Review";
 export const SITE_DESCRIPTION =
   "Tell us what happened in a few minutes and our team will review your case at no cost and with no obligation.";
 
+// Contact details shown at the bottom of the landing page and on the floating
+// "Email us" button. Taken from the client's sample page.
+export const CONTACT_EMAIL = "hello@lexgosolutions.com";
+export const PARENT_SITE_URL = "https://www.lexgosolutions.com/";
+export const PRIVACY_POLICY_URL = "https://www.lexgosolutions.com/privacy-policy";
+
 // Top urgency bar on the landing page. These are PLACEHOLDER numbers copied
 // from the client's sample so the design can be reviewed. They must be
 // replaced with real figures (or `enabled` set to false) before launch.
