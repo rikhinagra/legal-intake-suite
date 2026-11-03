@@ -9,6 +9,7 @@ import { submitLead } from "@/app/actions/submit-lead";
 import { uploadLeadFilePublic } from "@/lib/upload-lead-file";
 import { trackLeadOnce } from "@/lib/meta-pixel";
 import StepRail from "./StepRail";
+import StepProgress from "./StepProgress";
 import StepCase from "./steps/StepCase";
 import StepContact from "./steps/StepContact";
 import StepAccident from "./steps/StepAccident";
@@ -42,7 +43,7 @@ function isValidPhone(value: string) {
   return value.replace(/\D/g, "").length >= 10;
 }
 
-export default function IntakeWizard() {
+export default function IntakeWizard({ variant = "page" }: { variant?: "page" | "card" }) {
   const t = useTranslations("common");
   const tReview = useTranslations("stepReview");
   const [current, setCurrent] = useState(0);
@@ -227,6 +228,97 @@ export default function IntakeWizard() {
     if (step < current) goTo(step);
   }
 
+  const cardClassName =
+    variant === "card"
+      ? "flex flex-col rounded-2xl border border-line-soft bg-card p-[26px_24px_24px] shadow-[var(--shadow-lg)] max-sm:p-[22px_18px_20px]"
+      : "flex min-h-[460px] flex-col rounded-[14px] border border-line-soft bg-card p-[38px_36px_32px] shadow-[var(--shadow)] max-md:min-h-0 max-md:p-[26px_20px_22px]";
+
+  const card = (
+    <div ref={cardRef} className={cardClassName}>
+      {variant === "card" && (
+        <StepProgress current={current} submitted={submitted} caseNumber={caseNumber} />
+      )}
+      {!submitted ? (
+        <>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={current}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25 }}
+            >
+              {current === 0 && (
+                <StepCase data={data} update={update} attorneyInvalid={attorneyTouched} />
+              )}
+              {current === 1 && (
+                <StepContact data={data} update={update} invalidFields={contactInvalid} />
+              )}
+              {current === 2 && (
+                <StepAccident data={data} update={update} invalid={accidentInvalid} />
+              )}
+              {current === 3 && (
+                <StepInjuries data={data} update={update} invalid={injuriesInvalid} />
+              )}
+              {current === 4 && (
+                <StepReview
+                  data={data}
+                  consentInvalid={consentInvalid}
+                  onConsentChange={(checked) => {
+                    update({ consent: checked });
+                    if (checked) setConsentInvalid(false);
+                  }}
+                  attachments={attachments}
+                  onAttachmentsChange={setAttachments}
+                />
+              )}
+            </motion.div>
+          </AnimatePresence>
+
+          {submitError && (
+            <p className="mt-4 rounded-[9px] border border-rose-200 bg-rose-50 px-4 py-3 text-[13px] text-rose-700">
+              {submitError} Please try again.
+            </p>
+          )}
+
+          <div className="mt-auto flex items-center justify-between pt-7">
+            <button
+              onClick={handleBack}
+              className={`flex items-center gap-2 rounded-[9px] px-2.5 py-3 text-[14px] font-semibold text-charcoal-soft transition-colors hover:text-ink ${
+                current === 0 ? "invisible" : ""
+              }`}
+            >
+              <ArrowLeft className="h-4 w-4" /> {t("back")}
+            </button>
+            <button
+              onClick={handleNext}
+              disabled={submitting}
+              className="flex items-center gap-2 rounded-[9px] bg-blue px-[26px] py-[13px] text-[14px] font-semibold text-white transition-all hover:bg-ink hover:shadow-[0_6px_16px_rgba(11,76,245,0.3)] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {current === TOTAL_STEPS - 1
+                ? submitting
+                  ? t("submitting")
+                  : t("submitMyCase")
+                : t("continue")}
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          </div>
+        </>
+      ) : (
+        <>
+          <SuccessPanel caseNumber={caseNumber ?? ""} />
+          {uploadWarning && (
+            <p className="mx-5 mb-5 rounded-[9px] border border-clay/30 bg-clay/10 px-4 py-3 text-center text-[13px] text-clay">
+              {uploadWarning}
+            </p>
+          )}
+        </>
+      )}
+    </div>
+  );
+
+  if (variant === "card") return card;
+
   return (
     <div className="relative z-[2] mx-auto -mt-13 max-w-[980px] px-5 pb-8">
       <div className="grid grid-cols-[230px_1fr] items-start gap-7 max-md:grid-cols-1 max-md:gap-4">
@@ -236,88 +328,7 @@ export default function IntakeWizard() {
           submitted={submitted}
           onStepClick={handleStepClick}
         />
-
-        <div
-          ref={cardRef}
-          className="flex min-h-[460px] flex-col rounded-[14px] border border-line-soft bg-card p-[38px_36px_32px] shadow-[var(--shadow)] max-md:min-h-0 max-md:p-[26px_20px_22px]"
-        >
-          {!submitted ? (
-            <>
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={current}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.25 }}
-                >
-                  {current === 0 && (
-                    <StepCase data={data} update={update} attorneyInvalid={attorneyTouched} />
-                  )}
-                  {current === 1 && (
-                    <StepContact data={data} update={update} invalidFields={contactInvalid} />
-                  )}
-                  {current === 2 && (
-                    <StepAccident data={data} update={update} invalid={accidentInvalid} />
-                  )}
-                  {current === 3 && (
-                    <StepInjuries data={data} update={update} invalid={injuriesInvalid} />
-                  )}
-                  {current === 4 && (
-                    <StepReview
-                      data={data}
-                      consentInvalid={consentInvalid}
-                      onConsentChange={(checked) => {
-                        update({ consent: checked });
-                        if (checked) setConsentInvalid(false);
-                      }}
-                      attachments={attachments}
-                      onAttachmentsChange={setAttachments}
-                    />
-                  )}
-                </motion.div>
-              </AnimatePresence>
-
-              {submitError && (
-                <p className="mt-4 rounded-[9px] border border-rose-200 bg-rose-50 px-4 py-3 text-[13px] text-rose-700">
-                  {submitError} Please try again.
-                </p>
-              )}
-
-              <div className="mt-auto flex items-center justify-between pt-7">
-                <button
-                  onClick={handleBack}
-                  className={`flex items-center gap-2 rounded-[9px] px-2.5 py-3 text-[14px] font-semibold text-charcoal-soft transition-colors hover:text-ink ${
-                    current === 0 ? "invisible" : ""
-                  }`}
-                >
-                  <ArrowLeft className="h-4 w-4" /> {t("back")}
-                </button>
-                <button
-                  onClick={handleNext}
-                  disabled={submitting}
-                  className="flex items-center gap-2 rounded-[9px] bg-blue px-[26px] py-[13px] text-[14px] font-semibold text-white transition-all hover:bg-ink hover:shadow-[0_6px_16px_rgba(11,76,245,0.3)] disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {current === TOTAL_STEPS - 1
-                    ? submitting
-                      ? t("submitting")
-                      : t("submitMyCase")
-                    : t("continue")}
-                  <ArrowRight className="h-4 w-4" />
-                </button>
-              </div>
-            </>
-          ) : (
-            <>
-              <SuccessPanel caseNumber={caseNumber ?? ""} />
-              {uploadWarning && (
-                <p className="mx-5 mb-5 rounded-[9px] border border-clay/30 bg-clay/10 px-4 py-3 text-center text-[13px] text-clay">
-                  {uploadWarning}
-                </p>
-              )}
-            </>
-          )}
-        </div>
+        {card}
       </div>
     </div>
   );

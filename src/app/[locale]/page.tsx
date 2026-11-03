@@ -1,6 +1,6 @@
 import { setRequestLocale } from "next-intl/server";
-import Hero from "@/components/Hero";
-import IntakeWizard from "@/components/wizard/IntakeWizard";
+import UrgencyBar from "@/components/landing/UrgencyBar";
+import LandingHero from "@/components/landing/LandingHero";
 import Footer from "@/components/Footer";
 
 export default async function Home({ params }: PageProps<"/[locale]">) {
@@ -9,8 +9,8 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
 
   return (
     <main>
-      <Hero />
-      <IntakeWizard />
+      <UrgencyBar />
+      <LandingHero />
       <Footer />
     </main>
   );
