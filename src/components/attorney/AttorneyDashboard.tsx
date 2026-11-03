@@ -101,8 +101,11 @@ function formatDateTime(value: string | null) {
   });
 }
 
+// Case details come from a public form, so a value like "=HYPERLINK(...)" must
+// not run as a formula when the file is opened in a spreadsheet.
 function escapeCsv(value: string) {
-  return `"${value.replace(/"/g, '""')}"`;
+  const text = /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
+  return `"${text.replace(/"/g, '""')}"`;
 }
 
 export type AttorneyDashboardView = "accident" | "business";

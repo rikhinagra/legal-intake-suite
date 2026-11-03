@@ -4,6 +4,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
 import MetaPixel from "@/components/MetaPixel";
+import LangSync from "@/components/LangSync";
 import { SITE_NAME, SITE_URL } from "@/lib/site-config";
 
 export function generateStaticParams() {
@@ -74,6 +75,7 @@ export default async function LocaleLayout({
   return (
     <NextIntlClientProvider>
       <MetaPixel />
+      <LangSync />
       {children}
     </NextIntlClientProvider>
   );
