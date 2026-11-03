@@ -1,6 +1,12 @@
 import { BRAND_COLORS } from "@/lib/site-config";
 
-export default function CasePill({ caseNumber }: { caseNumber: string }) {
+export default function CasePill({
+  caseNumber,
+  label = "Case No.",
+}: {
+  caseNumber: string;
+  label?: string;
+}) {
   return (
     <table role="presentation" cellPadding={0} cellSpacing={0} border={0} style={{ margin: "0 0 22px" }}>
       <tbody>
@@ -16,7 +22,7 @@ export default function CasePill({ caseNumber }: { caseNumber: string }) {
               color: BRAND_COLORS.ink,
             }}
           >
-            <span style={{ color: BRAND_COLORS.green }}>●</span> Case No. {caseNumber}
+            <span style={{ color: BRAND_COLORS.green }}>●</span> {label} {caseNumber}
           </td>
         </tr>
       </tbody>

@@ -4,12 +4,14 @@ import { BRAND_COLORS, SITE_NAME } from "@/lib/site-config";
 export default function EmailLayout({
   preview,
   children,
+  lang = "en",
 }: {
   preview: string;
   children: React.ReactNode;
+  lang?: "en" | "es";
 }) {
   return (
-    <Html>
+    <Html lang={lang}>
       <Head>
         {/* Clients that support @font-face (most modern webmail/desktop/mobile) get the real
             brand faces; unsupported ones (chiefly Outlook desktop) fall back to the Helvetica/
@@ -54,8 +56,9 @@ export default function EmailLayout({
 
           <Hr style={{ borderColor: BRAND_COLORS.mist, margin: "24px 0" }} />
           <Text style={{ fontSize: "12px", color: "#5b6478" }}>
-            This is an automated notification from {SITE_NAME}. Please do not reply directly to
-            this email.
+            {lang === "es"
+              ? `Esta es una notificación automática de ${SITE_NAME}. Por favor no respondas directamente a este correo.`
+              : `This is an automated notification from ${SITE_NAME}. Please do not reply directly to this email.`}
           </Text>
         </Container>
       </Body>

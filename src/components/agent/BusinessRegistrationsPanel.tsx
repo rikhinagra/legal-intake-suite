@@ -222,6 +222,9 @@ export default function BusinessRegistrationsPanel({ onChanged }: { onChanged?: 
     }
     setSaving(true);
     setSaveError(null);
+    // Restarts the banner's timer, so a banner from an earlier save cannot
+    // expire in the middle of this one.
+    setShowSavedBanner(false);
     const result = await saveBusinessAgentReview({
       registrationId: detail.id,
       status,

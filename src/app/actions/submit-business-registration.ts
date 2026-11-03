@@ -2,6 +2,10 @@
 
 import { randomUUID } from "crypto";
 import { createPublicClient } from "@/lib/supabase/public-client";
+import {
+  notifyAgentsOfNewBusinessRegistration,
+  notifyBusinessOfRegistration,
+} from "@/lib/business-notifications";
 
 export interface BusinessRegistrationInput {
   company: string;
@@ -103,7 +107,25 @@ export async function submitBusinessRegistration(
       language: clean(input.language, 20),
     });
 
-    if (!error) return { ok: true, registrationId, registrationNumber };
+    if (!error) {
+      // Best-effort: these never throw, so a failed email cannot fail the registration.
+      await Promise.all([
+        notifyBusinessOfRegistration({
+          contactName: contact,
+          companyName: company,
+          email,
+          registrationNumber,
+          language: input.language,
+        }),
+        notifyAgentsOfNewBusinessRegistration({
+          registrationNumber,
+          companyName: company,
+          contactName: contact,
+          fleetSize: fleet,
+        }),
+      ]);
+      return { ok: true, registrationId, registrationNumber };
+    }
     if (error.code !== UNIQUE_VIOLATION) {
       console.error("submitBusinessRegistration insert failed:", error);
       return { ok: false, error: "We could not save your registration. Please try again." };

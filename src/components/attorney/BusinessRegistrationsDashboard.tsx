@@ -200,6 +200,9 @@ export default function BusinessRegistrationsDashboard({
     if (!modalReg || saving) return;
     setSaving(true);
     setSaveError(null);
+    // Restarts the banner's timer, so a banner from an earlier save cannot
+    // expire in the middle of this one.
+    setShowSavedBanner(false);
     const result = await saveBusinessAttorneyDecision({
       registrationId: modalReg.id,
       decision,

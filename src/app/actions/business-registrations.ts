@@ -1,6 +1,14 @@
 "use server";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import {
+  notifyAttorneysOfReadyBusiness,
+  notifyBusinessOfDecision,
+} from "@/lib/business-notifications";
+import {
+  shouldEmailBusinessOfDecision,
+  shouldNotifyAttorneys,
+} from "@/lib/business-notification-rules";
 
 export type BusinessStatus = "new" | "contacted" | "not_a_fit" | "ready_for_attorney";
 
@@ -126,6 +134,14 @@ export async function saveBusinessAgentReview(
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Not signed in." };
 
+  // Captured before the update below so the attorneys are only emailed when
+  // the registration is first passed on, not on every later re-save.
+  const { data: existing } = await supabase
+    .from("business_registrations")
+    .select("status, company_name, registration_number")
+    .eq("id", input.registrationId)
+    .maybeSingle();
+
   // `.select()` so a save that matched no row (for example if the signed-in
   // user's role doesn't allow it) is reported instead of silently doing nothing.
   const { data, error } = await supabase
@@ -143,6 +159,20 @@ export async function saveBusinessAgentReview(
   if (error) return { ok: false, error: error.message };
   if (!data || data.length === 0) {
     return { ok: false, error: "Could not save. The registration was not found." };
+  }
+
+  if (existing && shouldNotifyAttorneys(existing.status as BusinessStatus, input.status)) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    await notifyAttorneysOfReadyBusiness({
+      registrationNumber: existing.registration_number ?? input.registrationId,
+      companyName: existing.company_name,
+      agentName: profile?.full_name ?? "An agent",
+    });
   }
 
   return { ok: true };
@@ -260,7 +290,7 @@ export async function saveBusinessAttorneyDecision(
   // An attorney can only decide on a registration the agent has passed on.
   const { data: registration, error: lookupError } = await supabase
     .from("business_registrations")
-    .select("status")
+    .select("status, company_name, contact_name, email, language, registration_number")
     .eq("id", input.registrationId)
     .maybeSingle();
   if (lookupError) return { ok: false, error: lookupError.message };
@@ -268,6 +298,14 @@ export async function saveBusinessAttorneyDecision(
   if (registration.status !== "ready_for_attorney") {
     return { ok: false, error: "The agent has not passed this registration to the attorney yet." };
   }
+
+  // Captured before the save below so the business is only emailed when the
+  // decision actually changes, not when the attorney just edits notes.
+  const { data: previous } = await supabase
+    .from("business_attorney_decisions")
+    .select("decision")
+    .eq("registration_id", input.registrationId)
+    .maybeSingle();
 
   // `.select()` so a save blocked by the database rules (for example for an
   // agent account) is reported instead of silently doing nothing.
@@ -288,6 +326,17 @@ export async function saveBusinessAttorneyDecision(
   if (error) return { ok: false, error: error.message };
   if (!data || data.length === 0) {
     return { ok: false, error: "Could not save. You may not have permission to decide." };
+  }
+
+  if (shouldEmailBusinessOfDecision((previous?.decision as BusinessDecision | undefined) ?? null, input.decision)) {
+    await notifyBusinessOfDecision({
+      contactName: registration.contact_name,
+      companyName: registration.company_name,
+      email: registration.email,
+      registrationNumber: registration.registration_number ?? input.registrationId,
+      language: registration.language,
+      decision: input.decision,
+    });
   }
 
   return { ok: true };
